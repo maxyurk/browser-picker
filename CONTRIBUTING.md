@@ -45,6 +45,8 @@ For documentation images, `./scripts/screenshots.sh` renders the production view
 
 For the website, follow [docs/README.md](docs/README.md). Keep images, fonts, and scripts local, and preserve relative URLs so project-path GitHub Pages hosting works.
 
+Release tooling has its own regressions: `python3 -m unittest discover -s Tests/ReleaseTests`. App version fields are generated from Git tags at build time; do not add a manual version to `Resources/Info.plist`. [RELEASING.md](RELEASING.md) describes the workflow.
+
 ## Report a bug or submit a change
 
 Include the macOS and browser versions, exact reproduction steps, expected behavior, and an anonymized example URL when relevant. Remove tokens, account names, personal profile names, and private domains from logs and images. State which checks passed and which you could not run.

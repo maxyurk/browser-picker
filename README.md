@@ -30,12 +30,21 @@ Visit the [project website](https://maxyurk.github.io/browser-picker/). Its stat
 ### Requirements
 
 - macOS 14 or later.
-- Xcode or Command Line Tools with **Swift 6 or later** (`swift --version`).
 - At least one macOS web browser. Safari, Chrome, Firefox, Edge, Brave, Vivaldi, Opera, Arc, Zen, Orion, and other browsers can open regular links.
 
-The build uses your Mac's architecture and signs the app locally. Apple Silicon has been tested; Intel and earlier macOS versions have not yet been verified. Prebuilt, notarized releases are not currently provided.
+### Download and install
 
-### Build and install
+1. [Download Browser Picker for macOS](https://github.com/maxyurk/browser-picker/releases/latest/download/Browser-Picker.dmg). The universal app runs on Apple Silicon and Intel; no Xcode installation is needed.
+2. Open the disk image and drag **Browser Picker.app** into **Applications**. Quit an existing copy before replacing it.
+3. Open Browser Picker from **Applications**, then follow the setup steps below.
+
+The release is ad-hoc signed and is **not Apple-notarized**. If macOS blocks the first launch, check the source and release, then choose **System Settings → Privacy & Security → Open Anyway**. See [Apple's first-launch instructions](https://support.apple.com/en-us/102445).
+
+[ZIP download](https://github.com/maxyurk/browser-picker/releases/latest/download/Browser-Picker.zip) · [Release notes and checksums](https://github.com/maxyurk/browser-picker/releases/latest)
+
+### Build from source
+
+For a source build, install Xcode or Command Line Tools with **Swift 6 or later** (`swift --version`). The build uses your Mac's architecture and signs the app locally. Release CI builds and runs core tests on both Apple Silicon and Intel; native UI coverage is recorded in [TESTING.md](TESTING.md).
 
 Clone the repository, then test and install:
 
@@ -139,6 +148,8 @@ To reproduce the screenshots with neutral fixture data:
 This renders the real app views into `docs/assets/` and never reads your Browser Picker settings or Chrome profile metadata. It briefly shows native windows and requires Safari, Chrome, and Orion installed for their icons. [CONTRIBUTING.md](CONTRIBUTING.md) describes the source layout and useful checks.
 
 See [TESTING.md](TESTING.md) for the verification record, measured performance, and platform coverage. The recorded suite includes **94 core tests** and **151 native smoke assertions**. Routing with 50 rules measured a median **13 µs** on the tested Apple Silicon Mac; browser startup and page loading are separate.
+
+App versions come from stable Git tags such as `v1.0.1`. The [release workflow](.github/workflows/release.yml) can automatically bump patch, minor, or major, build a universal app, create the tag, and publish the downloads. See [RELEASING.md](RELEASING.md) for the release controls and versioning rules.
 
 ## Platform behavior
 

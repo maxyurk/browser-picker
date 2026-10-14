@@ -1,0 +1,145 @@
+name: Release macOS app
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump from the latest SemVer tag
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+      version:
+        description: Optional explicit version; leave blank for automatic bump
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: browser-picker-release
+  cancel-in-progress: false
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
+      commit: ${{ steps.version.outputs.commit }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Test release versioning
+        run: python3 -m unittest discover -s Tests/ReleaseTests
+      - name: Resolve version
+        id: version
+        env:
+          RELEASE_BUMP: ${{ inputs.bump || 'patch' }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_REF: ${{ github.ref_name }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            test "$GITHUB_REF" = refs/heads/main
+            python3 scripts/version.py --next "$RELEASE_BUMP" --version "$RELEASE_VERSION" --github-output
+          else
+            python3 scripts/version.py --tag "$RELEASE_REF" --verify-tag --github-output
+          fi
+
+  build:
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    env:
+      BROWSER_PICKER_RELEASE_TAG: ${{ needs.version.outputs.tag }}
+      TARGET_ARCH: ${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.version.outputs.commit }}
+          fetch-depth: 0
+      - name: Select Swift toolchain
+        run: |
+          sudo xcode-select --switch /Applications/Xcode_16.4.app
+          swift --version
+          test "$(uname -m)" = "$TARGET_ARCH"
+      - name: Test core in release mode
+        run: ./scripts/test.sh -c release
+      - name: Build and verify app
+        run: |
+          ./scripts/build.sh release
+          codesign --verify --deep --strict 'build/Browser Picker.app'
+          lipo -verify_arch "$TARGET_ARCH" 'build/Browser Picker.app/Contents/MacOS/BrowserPicker'
+          ditto -c -k --sequesterRsrc --keepParent 'build/Browser Picker.app' "build/Browser-Picker-$TARGET_ARCH.zip"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: browser-picker-${{ matrix.arch }}
+          path: build/Browser-Picker-${{ matrix.arch }}.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  publish:
+    needs: [version, build]
+    runs-on: macos-15
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      BROWSER_PICKER_RELEASE_TAG: ${{ needs.version.outputs.tag }}
+      RELEASE_VERSION: ${{ needs.version.outputs.version }}
+      RELEASE_COMMIT: ${{ needs.version.outputs.commit }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.version.outputs.commit }}
+          fetch-depth: 0
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: browser-picker-*
+          path: build/architectures
+          merge-multiple: true
+      - name: Assemble universal app
+        run: |
+          mkdir -p build/arm64 build/x86_64
+          ditto -x -k build/architectures/Browser-Picker-arm64.zip build/arm64
+          ditto -x -k build/architectures/Browser-Picker-x86_64.zip build/x86_64
+          python3 - <<'PY'
+          import json, plistlib
+          from pathlib import Path
+          apps=[Path('build')/arch/'Browser Picker.app' for arch in ['arm64','x86_64']]
+          assert (apps[0]/'Contents/Info.plist').read_bytes()==(apps[1]/'Contents/Info.plist').read_bytes()
+          info=[json.loads((app/'Contents/Resources/BuildInfo.json').read_text()) for app in apps]
+          assert {key:value for key,value in info[0].items() if key!='architecture'}=={key:value for key,value in info[1].items() if key!='architecture'}
+          PY
+          ditto 'build/arm64/Browser Picker.app' 'build/Browser Picker.app'
+          lipo -create 'build/arm64/Browser Picker.app/Contents/MacOS/BrowserPicker' 'build/x86_64/Browser Picker.app/Contents/MacOS/BrowserPicker' -output 'build/Browser Picker.app/Contents/MacOS/BrowserPicker'
+          lipo -verify_arch arm64 x86_64 'build/Browser Picker.app/Contents/MacOS/BrowserPicker'
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          path=Path('build/Browser Picker.app/Contents/Resources/BuildInfo.json')
+          info=json.loads(path.read_text()); info['architecture']='universal'; info['architectures']=['arm64','x86_64']
+          path.write_text(json.dumps(info,indent=2)+'\n')
+          PY
+          codesign --force --sign - 'build/Browser Picker.app'
+          ./scripts/package-release.sh
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: browser-picker-release
+          path: build/release/*
+          if-no-files-found: error
+          compression-level: 0
+      - name: Publish GitHub release
+        run: ./scripts/publish-release.sh

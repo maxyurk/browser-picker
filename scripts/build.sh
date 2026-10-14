@@ -13,6 +13,8 @@ if [[ ! -f build/AppIcon.icns || scripts/make-icon.swift -nt build/AppIcon.icns 
 fi
 cp ".build/$configuration/BrowserPicker" "$app/Contents/MacOS/BrowserPicker"
 cp Resources/Info.plist "$app/Contents/Info.plist"
+cp LICENSE "$app/Contents/Resources/LICENSE.txt"
+python3 scripts/version.py --write-plist "$app/Contents/Info.plist" --metadata "$app/Contents/Resources/BuildInfo.json"
 if [[ -f build/AppIcon.icns ]]; then cp build/AppIcon.icns "$app/Contents/Resources/"; fi
 codesign --force --sign - "$app"
 printf '%s\n' "$app"
