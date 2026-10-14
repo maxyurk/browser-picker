@@ -1,0 +1,153 @@
+import Foundation
+
+public enum PickerError: Error, LocalizedError, Equatable {
+    case invalidURL, invalidDomain, invalidRule(String), unsupportedVersion(Int), invalidProfile
+    public var errorDescription: String? {
+        switch self {
+        case .invalidURL: "Enter a valid http or https link."
+        case .invalidDomain: "Enter a hostname, such as github.com (no path or port)."
+        case .invalidRule(let reason): reason
+        case .unsupportedVersion(let version): "Settings version \(version) is newer than this app supports."
+        case .invalidProfile: "This Chrome profile is no longer available. Refresh the browsers in Settings."
+        }
+    }
+}
+
+public struct Destination: Codable, Hashable, Identifiable, Sendable {
+    public let id: String
+    public let name: String
+    public let bundleID: String
+    public let appPath: String
+    public let profile: String?
+    public let supportsPrivate: Bool
+    public init(id: String, name: String, bundleID: String, appPath: String, profile: String? = nil, supportsPrivate: Bool = false) {
+        self.id = id; self.name = name; self.bundleID = bundleID; self.appPath = appPath
+        self.profile = profile; self.supportsPrivate = supportsPrivate
+    }
+}
+
+public struct Rule: Codable, Equatable, Identifiable, Sendable {
+    public var id: UUID
+    public var domain: String
+    public var includeSubdomains: Bool
+    public var pathPrefix: String
+    public var sourceBundleID: String
+    public var destinationID: String
+    public var enabled: Bool
+    public var privateWindow: Bool
+    public init(id: UUID = UUID(), domain: String = "", includeSubdomains: Bool = true, pathPrefix: String = "", sourceBundleID: String = "", destinationID: String = "prompt", enabled: Bool = true, privateWindow: Bool = false) {
+        self.id = id; self.domain = domain; self.includeSubdomains = includeSubdomains
+        self.pathPrefix = pathPrefix; self.sourceBundleID = sourceBundleID
+        self.destinationID = destinationID; self.enabled = enabled; self.privateWindow = privateWindow
+    }
+    public func validated() throws -> Rule {
+        var result = self
+        result.domain = domain.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !result.domain.isEmpty { result.domain = try WebURL.normalizeDomain(result.domain) }
+        result.sourceBundleID = sourceBundleID.trimmingCharacters(in: .whitespacesAndNewlines)
+        result.pathPrefix = pathPrefix.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !result.domain.isEmpty || !result.sourceBundleID.isEmpty else {
+            throw PickerError.invalidRule("Add a website or a source app to the rule.")
+        }
+        guard result.pathPrefix.isEmpty || result.pathPrefix.hasPrefix("/") else {
+            throw PickerError.invalidRule("Path prefixes must start with /.")
+        }
+        guard !destinationID.isEmpty else { throw PickerError.invalidRule("Choose a destination.") }
+        return result
+    }
+    public func matches(_ url: URL, source: String?) -> Bool {
+        guard let host = Self.matchingHost(url) else { return false }
+        return matches(host: host, path: url.path, source: source)
+    }
+    static func matchingHost(_ url: URL) -> String? {
+        guard var host = url.host?.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: ".")) else { return nil }
+        if host.contains(":") { host = (try? WebURL.normalizeDomain(host)) ?? host }
+        return host
+    }
+    func matches(host: String, path: String, source: String?) -> Bool {
+        guard enabled else { return false }
+        if !domain.isEmpty && host != domain && !(includeSubdomains && host.hasSuffix("." + domain)) { return false }
+        if !sourceBundleID.isEmpty && sourceBundleID != source { return false }
+        return pathPrefix.isEmpty || path.hasPrefix(pathPrefix)
+    }
+}
+
+public struct Configuration: Codable, Equatable, Sendable {
+    public var version = 1
+    public var defaultDestinationID = "prompt"
+    public var hiddenDestinationIDs: Set<String> = []
+    public var customBrowserPaths: [String] = []
+    public var cleanTracking = false
+    public var unwrapRedirects = true
+    public var dismissPickerOnOutsideClick = true
+    public var rules: [Rule] = []
+    public init() {}
+    enum CodingKeys: CodingKey { case version, defaultDestinationID, hiddenDestinationIDs, customBrowserPaths, cleanTracking, unwrapRedirects, dismissPickerOnOutsideClick, rules }
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        version = try values.decodeIfPresent(Int.self, forKey: .version) ?? 1
+        guard version == 1 else { throw PickerError.unsupportedVersion(version) }
+        defaultDestinationID = try values.decodeIfPresent(String.self, forKey: .defaultDestinationID) ?? "prompt"
+        hiddenDestinationIDs = try values.decodeIfPresent(Set<String>.self, forKey: .hiddenDestinationIDs) ?? []
+        customBrowserPaths = try values.decodeIfPresent([String].self, forKey: .customBrowserPaths) ?? []
+        cleanTracking = try values.decodeIfPresent(Bool.self, forKey: .cleanTracking) ?? false
+        unwrapRedirects = try values.decodeIfPresent(Bool.self, forKey: .unwrapRedirects) ?? true
+        dismissPickerOnOutsideClick = try values.decodeIfPresent(Bool.self, forKey: .dismissPickerOnOutsideClick) ?? true
+        rules = try values.decodeIfPresent([Rule].self, forKey: .rules) ?? []
+        rules = try rules.map { try $0.validated() }
+        guard Set(rules.map(\.id)).count == rules.count else { throw PickerError.invalidRule("Duplicate rule identifiers in settings.") }
+    }
+    public mutating func remember(domain: String, destinationID: String, privateWindow: Bool = false) throws {
+        let host = try WebURL.normalizeDomain(domain)
+        // A remembered choice takes precedence, but never overwrites a source-specific rule.
+        rules.removeAll { $0.domain == host && $0.sourceBundleID.isEmpty && $0.pathPrefix.isEmpty }
+        rules.insert(Rule(domain: host, destinationID: destinationID, privateWindow: privateWindow), at: 0)
+    }
+}
+
+public struct LinkRequest: Equatable, Sendable {
+    public let url: URL
+    public let sourceBundleID: String?
+    public let forcePrompt: Bool
+    public init(url: URL, sourceBundleID: String? = nil, forcePrompt: Bool = false) {
+        self.url = url; self.sourceBundleID = sourceBundleID; self.forcePrompt = forcePrompt
+    }
+}
+
+public enum Route: Equatable, Sendable {
+    case prompt(URL)
+    case open(URL, Destination, privateWindow: Bool)
+}
+
+public enum Router {
+    public static func route(_ request: LinkRequest, configuration: Configuration, destinations: [Destination]) throws -> Route {
+        let url = try WebURL.process(request.url, unwrap: configuration.unwrapRedirects, cleanTracking: configuration.cleanTracking)
+        if request.forcePrompt { return .prompt(url) }
+        // Normalize once per incoming URL, rather than once for each candidate rule.
+        let host = Rule.matchingHost(url) ?? ""
+        let path = url.path
+        let rule = configuration.rules.first { $0.matches(host: host, path: path, source: request.sourceBundleID) }
+        let target = rule?.destinationID ?? configuration.defaultDestinationID
+        // Missing targets always fall back to a choice; never silently use another account/browser.
+        guard target != "prompt", let destination = destinations.first(where: { $0.id == target }) else { return .prompt(url) }
+        let privateWindow = rule?.privateWindow ?? false
+        guard !privateWindow || destination.supportsPrivate else { return .prompt(url) }
+        return .open(url, destination, privateWindow: privateWindow)
+    }
+}
+
+/// FIFO, preserving every link across concurrent open events and repeated clicks.
+public struct RequestQueue: Sendable {
+    private var storage: [LinkRequest] = []
+    private var head = 0
+    public init() {}
+    public var count: Int { storage.count - head }
+    public mutating func append(_ request: LinkRequest) { storage.append(request) }
+    public mutating func pop() -> LinkRequest? {
+        guard head < storage.count else { return nil }
+        let result = storage[head]; head += 1
+        if head == storage.count { storage.removeAll(keepingCapacity: true); head = 0 }
+        else if head > 128 && head * 2 > storage.count { storage.removeFirst(head); head = 0 }
+        return result
+    }
+}

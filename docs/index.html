@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f8fc">
+  <meta name="description" content="A small, native macOS browser picker. Choose any installed macOS browser or a supported Chromium profile for every external link. Local routing. Open source. MIT licensed.">
+  <meta name="repository" content="https://github.com/maxyurk/browser-picker">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Browser Picker — Every link. The right browser.">
+  <meta property="og:description" content="Choose a browser. Remember a website. Keep your flow. A native, open-source macOS app.">
+  <meta property="og:url" content="https://maxyurk.github.io/browser-picker/">
+  <meta property="og:image" content="https://maxyurk.github.io/browser-picker/assets/app-icon.png">
+  <link rel="canonical" href="https://maxyurk.github.io/browser-picker/">
+  <title>Browser Picker — Every link. The right browser.</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preload" as="image" href="assets/picker.png">
+  <script src="site.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header wrap">
+    <a class="brand" href="#" aria-label="Browser Picker home">
+      <img src="assets/app-icon.png" width="42" height="42" alt="">
+      <span>Browser Picker</span>
+    </a>
+    <nav aria-label="Main navigation">
+      <a href="#workflow">How it works</a>
+      <a href="#shortcuts">Shortcuts</a>
+      <a class="nav-cta" href="#build">Get started <span aria-hidden="true">↗</span></a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero wrap" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span> Made for your Mac</p>
+        <h1 id="hero-title">Every link.<br>The <span>right browser.</span></h1>
+        <p class="hero-description">Work in one browser. Read in another. Choose where each link goes, without breaking your flow.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#build">Build for macOS <span aria-hidden="true">↗</span></a>
+          <a class="text-link" href="#workflow">Take a closer look <span aria-hidden="true">↓</span></a>
+        </div>
+        <p class="hero-note">macOS 14+ <span aria-hidden="true">·</span> Free & open source <span aria-hidden="true">·</span> MIT licensed</p>
+        <div class="hero-detail">
+          <svg width="22" height="26" viewBox="0 0 24 28" fill="none" aria-hidden="true"><path d="M12 25V16C12 10 5 12 5 5M12 16C12 10 19 12 19 5M2 8L5 5L8 8M16 8L19 5L22 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <p>A tiny menu bar app.<br><strong>A little more control over every click.</strong></p>
+        </div>
+      </div>
+      <figure class="hero-product">
+        <div class="product-stage">
+          <div class="stage-label" aria-hidden="true"><span></span> An external link arrives</div>
+          <img id="picker-preview" class="picker-image" src="assets/picker.png" width="864" height="1032" alt="Browser Picker showing Orion, Chrome, Chrome Work, and Safari for a GitHub link" fetchpriority="high">
+          <div class="stage-footnote" aria-hidden="true">Your link. Your choice.</div>
+        </div>
+        <div class="preview-controls" hidden>
+          <button type="button" data-picker-mode="once" aria-pressed="true">Open once</button>
+          <button type="button" data-picker-mode="remember" aria-pressed="false">Hold <kbd>⌘</kbd> to remember</button>
+        </div>
+        <figcaption id="preview-caption">The real app, with an illustrative Work profile.</figcaption>
+      </figure>
+    </section>
+
+    <div class="compatibility wrap" aria-label="Supported browsers">
+      <span class="small-label">A home for your browsers</span>
+      <div class="browser-list"><span>Safari</span><span>Google Chrome <small>+ profiles</small></span><span>Firefox <small>+ any browser</small></span></div>
+      <span class="native-tag">100% native UI</span>
+    </div>
+
+    <section id="workflow" class="workflow wrap section-space" aria-labelledby="workflow-title">
+      <div class="section-intro">
+        <p class="eyebrow">One choice, then you're on your way</p>
+        <h2 id="workflow-title">A small pause.<br>A better destination.</h2>
+        <p>Make Browser Picker your default web browser. Links from other apps come to you first, ready for the browser or account you need.</p>
+      </div>
+      <ol class="workflow-steps">
+        <li><span class="step-index">01</span><h3>A link comes in</h3><p>From a message, a document, or another app. The picker shows the destination website.</p></li>
+        <li><span class="step-index">02</span><h3>Make your choice</h3><p>Click a browser or press its number. Supported browser profiles get their own rows.</p></li>
+        <li><span class="step-index">03</span><h3>Keep moving</h3><p>The link opens where you chose. Next time, a saved website rule can do it automatically.</p></li>
+      </ol>
+    </section>
+
+    <section id="shortcuts" class="shortcut-section" aria-labelledby="shortcuts-title">
+      <div class="wrap shortcut-layout">
+        <div class="shortcut-copy">
+          <p class="eyebrow">Your keyboard already knows the way</p>
+          <h2 id="shortcuts-title">One key to open.<br>One more to remember.</h2>
+          <p>Press <kbd>3</kbd> to open in browser 3. Hold <kbd>⌘</kbd> and press <kbd>3</kbd> to use it for this website from now on.</p>
+          <p>The heading, checkbox, and shortcut badges change while you hold Command. Release it and your previous checkbox choice returns.</p>
+          <a class="text-link" href="assets/picker-remember.png" target="_blank" rel="noopener">See remember mode <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="keyboard-card">
+          <div class="key-combination" aria-label="Command plus 3"><span class="big-key command-key">⌘<small>command</small></span><span class="key-plus" aria-hidden="true">+</span><span class="big-key number-key">3</span></div>
+          <div class="key-result"><span class="check-icon" aria-hidden="true">✓</span> Open now. Remember after a successful launch.</div>
+          <dl class="shortcut-list">
+            <div><dt>Choose a browser</dt><dd><kbd>↑</kbd> <kbd>↓</kbd> <kbd>↵</kbd></dd></div>
+            <div><dt>Supported private window</dt><dd><kbd>⌥</kbd> + click</dd></div>
+            <div><dt>Copy the link</dt><dd><kbd>⌘</kbd> <kbd>C</kbd></dd></div>
+            <div><dt>Close the picker</dt><dd><kbd>esc</kbd> or click outside</dd></div>
+          </dl>
+          <p class="card-note">Outside-click dismissal is on by default and configurable in Settings.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="rules-section wrap section-space" aria-labelledby="rules-title">
+      <div class="rules-copy">
+        <p class="eyebrow">Set it once. Stay in the right account.</p>
+        <h2 id="rules-title">Some links already<br>have a home.</h2>
+        <p>Send GitHub to your work profile, developer docs to Orion, and reading to Safari. Match a website, a path, or the app you clicked the link in.</p>
+        <ul class="check-list">
+          <li>First matching enabled rule wins.</li>
+          <li>Unmatched links can always ask.</li>
+          <li>Missing browser or profile? The picker returns.</li>
+        </ul>
+        <p class="fine-print">Hold Fn or Option when opening an external link to choose again, even when a rule matches.</p>
+      </div>
+      <figure class="settings-figure">
+        <a href="assets/rules.png" target="_blank" rel="noopener" aria-label="Open the full routing rules screenshot"><img src="assets/rules.png" width="1280" height="1184" alt="Native settings with example GitHub, Apple developer, and Wikipedia routing rules" loading="lazy"></a>
+        <figcaption>Simple rules. Native settings. Example configuration shown.</figcaption>
+      </figure>
+    </section>
+
+    <section class="local-section" aria-labelledby="local-title">
+      <div class="wrap local-layout">
+        <div class="local-heading">
+          <p class="eyebrow">Small by design</p>
+          <h2 id="local-title">Lives on your Mac.<br>Stays out of your way.</h2>
+          <p>Swift, AppKit, and SwiftUI. A local routing engine that gets straight to the decision.</p>
+          <div class="local-signature"><img src="assets/app-icon.png" width="64" height="64" alt="" loading="lazy"><span>Browser Picker<small>Native. Local. Open source.</small></span></div>
+        </div>
+        <div class="local-details">
+          <article><span class="detail-number">01 / PRIVATE</span><h3>Your links stay local</h3><p>No telemetry or routing server. Normal use records no link history. Profile discovery reads names and directories, never cookies, passwords, or browsing history.</p></article>
+          <article><span class="detail-number">02 / CONSIDERATE</span><h3>Cleaner links, your choice</h3><p>Known redirect wrappers are unwrapped locally. Optional tracking cleanup starts off and preserves recognized signed and authentication links.</p></article>
+          <article><span class="detail-number">03 / QUICK</span><h3>Very little between click and choice</h3><p>Routing measured a median 13 µs with 50 rules on an Apple Silicon Mac. Browser startup and page loading remain up to your browser and network.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="build" class="build-section wrap section-space" aria-labelledby="build-title">
+      <div class="build-heading">
+        <p class="eyebrow">Make it yours</p>
+        <h2 id="build-title">Your next link<br>can open differently.</h2>
+        <p>Free to use, inspect, and improve.<br>Build a local copy in a few steps.</p>
+        <a class="text-link repository-link" href="https://github.com/maxyurk/browser-picker">Browse the source on GitHub <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="build-card">
+        <div class="build-card-header"><span class="terminal-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Get started on macOS</span><span class="build-version">Swift 6+</span></div>
+        <ol class="install-steps">
+          <li><span class="install-index">1</span><div><h3>Get the source</h3><p>Clone or download the repository. Open Terminal in the project directory.</p><a class="source-download text-link" href="https://github.com/maxyurk/browser-picker/archive/HEAD.zip">Download source ZIP <span aria-hidden="true">↓</span></a></div></li>
+          <li><span class="install-index">2</span><div><h3>Build and install</h3><p>Use macOS 14+ and Xcode or Command Line Tools with Swift 6+.</p><div class="command-line"><code id="install-command">./scripts/install.sh</code><button id="copy-command" type="button" hidden aria-label="Copy install command">Copy</button></div><p class="command-status" id="copy-status" role="status"></p></div></li>
+          <li><span class="install-index">3</span><div><h3>Set your default</h3><p>Open General settings, choose <strong>Make default…</strong>, and accept the macOS prompt. Leave unmatched links on <strong>Always ask</strong>.</p></div></li>
+        </ol>
+        <p class="build-note">Built and signed locally for your Mac. Apple Silicon is tested; Intel and older macOS releases are not yet verified. No prebuilt notarized release is currently available.</p>
+      </div>
+    </section>
+
+    <section class="faq-section wrap" aria-labelledby="faq-title">
+      <div><p class="eyebrow">A few useful details</p><h2 id="faq-title">Before your first click.</h2></div>
+      <div class="faq-list">
+        <details><summary>Which browsers and profiles are supported?</summary><p>Any macOS browser can open regular links, including Safari, Chrome, Firefox, Edge, Brave, Vivaldi, Opera, Arc, Zen, and Orion. Browsers are discovered from macOS metadata; use Add browser… for anything missing. Profile and private-window routing are available for compatible Chromium browsers that publish their profile-root metadata. Other browsers use their regular URL handlers.</p></details>
+        <details><summary>Does it change links inside a browser?</summary><p>Browser Picker handles external HTTP and HTTPS links sent to it by macOS. Links clicked inside a browser stay there unless explicitly sent to this app. Universal links may go directly to their associated app.</p></details>
+        <details><summary>What happens if I click outside?</summary><p>The current picker closes without opening its link. Any other queued links pause. Resume them from the menu bar, reopen the app, or send a new link. You can turn this behavior off in General settings.</p></details>
+        <details><summary>How do I switch back?</summary><p>Choose another default web browser in System Settings → Desktop & Dock, disable Launch at login if you enabled it, then quit Browser Picker.</p></details>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer wrap">
+    <a class="brand" href="#"><img src="assets/app-icon.png" width="32" height="32" alt=""><span>Browser Picker</span></a>
+    <p>Your links. Your browsers.</p>
+    <div><a class="repository-link" href="https://github.com/maxyurk/browser-picker">Source</a><a href="license.txt">MIT license</a><a href="#build">Get started <span aria-hidden="true">↑</span></a></div>
+  </footer>
+</body>
+</html>
