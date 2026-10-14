@@ -50,6 +50,7 @@ svg { flex-shrink: 0; }
 h1 { font-size: clamp(48px, 5.35vw, 70px); line-height: 1.03; letter-spacing: -3.7px; }
 h1 span { color: var(--blue); }
 .hero-description { font-size: 18px; max-width: 440px; margin-top: 27px; line-height: 1.65; }
+.hero-privacy { font-size: 13px; margin-top: 14px; }
 .hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 23px; margin-top: 32px; }
 .button { display: inline-flex; align-items: center; gap: 22px; padding: 16px 21px; border-radius: 10px; font-size: 14px; font-weight: 600; transition: background .18s, transform .18s; }
 .primary { background: var(--blue); color: white; box-shadow: 0 5px 12px #3a5de51a; }
