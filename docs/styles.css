@@ -39,6 +39,8 @@ svg { flex-shrink: 0; }
 .brand { display: inline-flex; align-items: center; gap: 9px; font-size: 16px; font-weight: 650; letter-spacing: -.3px; flex-shrink: 0; }
 .site-header nav { display: flex; align-items: center; gap: 30px; font-size: 13px; font-weight: 550; }
 .site-header nav a:hover { color: var(--blue); }
+.github-link { display: inline-flex; align-items: center; gap: 7px; }
+.github-link svg { width: 18px; height: 18px; }
 .nav-cta { padding: 11px 16px; background: #e9edf8; border: 1px solid #e1e6f1; border-radius: 9px; }
 .nav-cta span { margin-left: 7px; }
 .hero { display: grid; grid-template-columns: 1.05fr 1fr; gap: 54px; align-items: center; padding-block: 35px 64px; }
@@ -179,8 +181,10 @@ kbd { display: inline-block; font: 12px ui-monospace, SFMono-Regular, Menlo, mon
 @media (max-width: 760px) {
   .wrap { width: min(550px, calc(100% - 40px)); }
   .site-header { height: 82px; }
-  .site-header nav a:not(.nav-cta) { display: none; }
-  .site-header nav { gap: 0; }
+  .site-header nav a:not(.nav-cta):not(.github-link) { display: none; }
+  .site-header nav { gap: 14px; }
+  .github-link { padding-block: 10px; }
+  .github-link span { display: none; }
   .brand { font-size: 14px; }
   .brand img { width: 36px; }
   .nav-cta { font-size: 11px; padding: 10px 12px; }
