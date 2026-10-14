@@ -88,6 +88,7 @@ jobs:
           path: build/Browser-Picker-${{ matrix.arch }}.zip
           if-no-files-found: error
           compression-level: 0
+          overwrite: true
 
   publish:
     needs: [version, build]
@@ -141,5 +142,6 @@ jobs:
           path: build/release/*
           if-no-files-found: error
           compression-level: 0
+          overwrite: true
       - name: Publish GitHub release
         run: ./scripts/publish-release.sh

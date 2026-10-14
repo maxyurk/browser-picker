@@ -24,21 +24,6 @@ for (const button of previewControls.querySelectorAll("button")) {
   });
 }
 
-const copyButton = document.querySelector("#copy-command");
-const copyStatus = document.querySelector("#copy-status");
-const command = document.querySelector("#install-command");
-if (navigator.clipboard?.writeText) {
-  copyButton.hidden = false;
-  copyButton.addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(command.textContent.trim());
-      copyStatus.textContent = "Copied. Run it from the project directory.";
-    } catch {
-      copyStatus.textContent = "Select the command above and copy it manually.";
-    }
-  });
-}
-
 // A local preview has no made-up repository URL. Standard GitHub Pages hosting
 // can infer it; a public metadata URL handles custom domains and other setups.
 function repositoryURL() {
@@ -67,6 +52,14 @@ if (repository) {
     link.hidden = false;
   }
   const sourceDownload = document.querySelector(".source-download");
-  sourceDownload.href = `${repository}/archive/HEAD.zip`;
-  sourceDownload.hidden = false;
+  if (sourceDownload) {
+    sourceDownload.href = `${repository}/archive/HEAD.zip`;
+    sourceDownload.hidden = false;
+  }
+  for (const link of document.querySelectorAll(".release-download")) {
+    link.href = `${repository}/releases/latest/download/Browser-Picker.dmg`;
+  }
+  for (const link of document.querySelectorAll(".release-notes")) {
+    link.href = `${repository}/releases/latest`;
+  }
 }

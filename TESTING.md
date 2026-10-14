@@ -54,7 +54,7 @@ Picker measurements time native view/window setup; they do not measure display s
 
 The actual default-browser consent and launch-at-login consent flows are implemented with Apple's NSWorkspace and ServiceManagement APIs. The original tests preserved system preferences. After Browser Picker was selected as default, read-only diagnostics confirmed both installed handler paths and the native suite verified that Make Default does not repeat a system request or show a warning. Failed automatic requests offer System Settings → Desktop & Dock → Default web browser; consent and managed-policy restrictions still belong to macOS. Source-app rules require macOS to expose an identifiable sender. Private/profile routing for browsers without compatible Chromium metadata, browser extensions, universal-link interception, and online short-link expansion are outside the current implementation. Regular link routing now supports generic macOS browser apps.
 
-The app is ad-hoc signed for local use. Notarization, distribution, updates, other machines, older macOS releases, long-running soak tests, and every browser version are not verified. No unresolved failures were found in the tested scope.
+The app and release downloads are ad-hoc signed. Universal release packaging and downloaded artifacts are verified below. Apple notarization, automatic app updates, native UI on other physical machines or older macOS releases, long-running soak tests, and every browser version are not verified. No unresolved failures were found in the tested scope.
 
 ## Documentation and website verification
 
@@ -89,3 +89,13 @@ The installed build passed **151 native assertions**; the public-identifier buil
 Real handoffs succeeded for a local HTML fixture and a nonexistent file in **all six browser destinations** (regular browsers, a Chromium profile, and incognito). A missing-file check initially exposed Launch Services rejecting documents before their browser could handle them. Regular file handoffs now launch the selected app with a standard URL event. `scripts/test-file-handoffs.sh` verifies this transport end to end: a cold receiver and warm receiver received all **three exact addresses**, including an unknown extension and two nonexistent files. Browser handoff acceptance does not establish that a browser can render every file type.
 
 Native testing also caught reuse of a pasteboard item during clipboard restoration in the harness. Restoration now creates fresh items from the saved representations. The final installed app passed code signing and retained both HTTP/HTTPS defaults; the user's settings file remained byte-for-byte unchanged.
+
+## Release automation and v1.0.1
+
+The release workflow completed successfully on GitHub Actions: all **14 release-version tests** passed, and all **94 core tests passed on each of Apple Silicon and Intel macOS runners**. Both apps were combined into a universal binary and signed after combination. The initial run caught incorrect `lipo` argument ordering; the corrected run succeeded and published the release. Failed builds created no release tag.
+
+The published DMG, ZIP, and build metadata matched their SHA-256 checksums. The downloaded ZIP extracted into an app that passed strict code-signature verification, contained both `arm64` and `x86_64`, included the MIT license, and reported version **1.0.1**, build **4**, and the exact source commit recorded by tag `v1.0.1`. The actual downloaded app passed **147 native assertions** on the Apple Silicon Mac; the four already-default checks were correctly omitted for its public app identifier. The published disk image passed `hdiutil verify`.
+
+Version regressions cover numeric tag ordering, reachable development tags, patch/minor/major resets, the first explicit release, rejecting malformed or unsafe tag text, preventing downgrades or moved tags, retrying an existing tag on the same commit, exact tag/checkout verification, source archives, nested repositories, environment overrides, and stamping metadata without changing the bundle identity. Resolving the next version after fetching `v1.0.1` produced **v1.0.2** without creating a tag.
+
+The latest-release DMG URL returned HTTP 200. Website download buttons use that stable URL, with installation steps for dragging the app to Applications and explicit first-launch guidance for the non-notarized build. Static asset/anchor checks, JavaScript syntax, screenshot switching, layout, and browser error logs were checked for the revised page.

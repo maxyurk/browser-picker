@@ -28,7 +28,7 @@
     <nav aria-label="Main navigation">
       <a href="#workflow">How it works</a>
       <a href="#shortcuts">Shortcuts</a>
-      <a class="nav-cta" href="#build">Get started <span aria-hidden="true">↗</span></a>
+      <a class="nav-cta" href="#build">Download <span aria-hidden="true">↗</span></a>
     </nav>
   </header>
 
@@ -39,7 +39,7 @@
         <h1 id="hero-title">Every link.<br>The <span>right browser.</span></h1>
         <p class="hero-description">Work in one browser. Read in another. Choose where each link goes, without breaking your flow.</p>
         <div class="hero-actions">
-          <a class="button primary" href="#build">Build for macOS <span aria-hidden="true">↗</span></a>
+          <a class="button primary release-download" href="https://github.com/maxyurk/browser-picker/releases/latest/download/Browser-Picker.dmg">Download for macOS <span aria-hidden="true">↓</span></a>
           <a class="text-link" href="#workflow">Take a closer look <span aria-hidden="true">↓</span></a>
         </div>
         <p class="hero-note">macOS 14+ <span aria-hidden="true">·</span> Free & open source <span aria-hidden="true">·</span> MIT licensed</p>
@@ -142,23 +142,24 @@
       <div class="build-heading">
         <p class="eyebrow">Make it yours</p>
         <h2 id="build-title">Your next link<br>can open differently.</h2>
-        <p>Free to use, inspect, and improve.<br>Build a local copy in a few steps.</p>
+        <p>Free to use, inspect, and improve.<br>One download for Apple Silicon and Intel.</p>
         <a class="text-link repository-link" href="https://github.com/maxyurk/browser-picker">Browse the source on GitHub <span aria-hidden="true">↗</span></a>
       </div>
       <div class="build-card">
-        <div class="build-card-header"><span class="terminal-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Get started on macOS</span><span class="build-version">Swift 6+</span></div>
+        <div class="build-card-header"><span class="terminal-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Install on your Mac</span><span class="build-version">macOS 14+</span></div>
         <ol class="install-steps">
-          <li><span class="install-index">1</span><div><h3>Get the source</h3><p>Clone or download the repository. Open Terminal in the project directory.</p><a class="source-download text-link" href="https://github.com/maxyurk/browser-picker/archive/HEAD.zip">Download source ZIP <span aria-hidden="true">↓</span></a></div></li>
-          <li><span class="install-index">2</span><div><h3>Build and install</h3><p>Use macOS 14+ and Xcode or Command Line Tools with Swift 6+.</p><div class="command-line"><code id="install-command">./scripts/install.sh</code><button id="copy-command" type="button" hidden aria-label="Copy install command">Copy</button></div><p class="command-status" id="copy-status" role="status"></p></div></li>
+          <li><span class="install-index">1</span><div><h3>Download the app</h3><p>Get the latest universal disk image directly from GitHub. No Xcode or Terminal needed.</p><a class="release-download text-link" href="https://github.com/maxyurk/browser-picker/releases/latest/download/Browser-Picker.dmg">Download Browser Picker <span aria-hidden="true">↓</span></a></div></li>
+          <li><span class="install-index">2</span><div><h3>Drag to Applications</h3><p>Open the disk image and drag Browser Picker.app to Applications. Quit an existing copy before replacing it, then open the app from Applications.</p></div></li>
           <li><span class="install-index">3</span><div><h3>Set your default</h3><p>Open General settings, choose <strong>Make default…</strong>, and accept the macOS prompt. Leave unmatched links on <strong>Always ask</strong>.</p></div></li>
         </ol>
-        <p class="build-note">Built and signed locally for your Mac. Apple Silicon is tested; Intel and older macOS releases are not yet verified. No prebuilt notarized release is currently available.</p>
+        <p class="build-note">Requires macOS 14 or later. Ad-hoc signed; not Apple-notarized. See the first-launch guidance below.<br><a class="release-notes" href="https://github.com/maxyurk/browser-picker/releases/latest">Release notes & checksums</a> <span aria-hidden="true">·</span> <a class="source-download" href="https://github.com/maxyurk/browser-picker/archive/HEAD.zip">Source ZIP</a></p>
       </div>
     </section>
 
     <section class="faq-section wrap" aria-labelledby="faq-title">
       <div><p class="eyebrow">A few useful details</p><h2 id="faq-title">Before your first click.</h2></div>
       <div class="faq-list">
+        <details><summary>Why does macOS show a first-launch warning?</summary><p>The download is ad-hoc signed and is not Apple-notarized. After reviewing the source and release, open the app from Applications. If macOS blocks it, choose System Settings → Privacy & Security → Open Anyway. <a href="https://support.apple.com/en-us/102445">Apple explains the first-launch steps.</a></p></details>
         <details><summary>Which browsers and profiles are supported?</summary><p>Any macOS browser can open regular links, including Safari, Chrome, Firefox, Edge, Brave, Vivaldi, Opera, Arc, Zen, and Orion. Browsers are discovered from macOS metadata; use Add browser… for anything missing. Profile and private-window routing are available for compatible Chromium browsers that publish their profile-root metadata. Other browsers use their regular URL handlers.</p></details>
         <details><summary>Can I open local files?</summary><p>Yes. Choose Open With → Browser Picker, drop a file onto the app, or send a file URL. Any file type goes to your chosen browser, which decides how to display it. Files use your picker or default browser; website remembering applies to web links.</p></details>
         <details><summary>Does it change links inside a browser?</summary><p>Browser Picker handles external HTTP and HTTPS links and files sent to it by macOS. Links clicked inside a browser stay there unless explicitly sent to this app. Universal links may go directly to their associated app.</p></details>
