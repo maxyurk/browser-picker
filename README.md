@@ -14,6 +14,8 @@
 
 Browser Picker lives in your menu bar. Set it as your default web browser, then choose any macOS browser or an available browser profile when an external link arrives. Keep **Always ask** for unmatched links, or let rules handle familiar websites automatically.
 
+Local files work too: choose **Open With → Browser Picker**, drop a file onto the app, or send a `file://` URL. Any file type is forwarded to the browser you choose, without checking its contents or whether it exists. Your browser decides how to display it. To use Browser Picker whenever you open an HTML file, select it under Finder's **Get Info → Open with → Change All…**.
+
 - **Choose quickly.** Click a browser, press its number, or use the arrow keys and Return.
 - **Remember in one gesture.** Hold ⌘ and choose a browser. The checkbox, heading, and shortcut badges visibly change; ⌘1 opens and remembers browser 1.
 - **Keep accounts separate.** Route websites to supported Chromium profiles, or match a path or the app a link came from.
@@ -77,6 +79,8 @@ open "build/Browser Picker.app"
 
 You can also check **Always use this browser for this website** manually. A choice is remembered only after the browser launch succeeds, for the host and its subdomains.
 
+Files use the same picker and configured default. Website rules and the remember option apply to web links; source-app rules can also route files. ⌘1–⌘9 still select browsers for files, without creating a website rule. **Open link from clipboard…** also accepts copied Finder files, file URLs, and absolute file paths.
+
 Outside-click dismissal is enabled by default; change **Settings → General → Close picker when clicking outside** to disable it. Outside dismissal pauses any remaining queue. Choose **Resume N queued links…** in the menu bar, reopen the app, or send a new link to resume. Escape cancels the current link and advances the queue.
 
 The menu bar also offers **Open link from clipboard…**.
@@ -102,7 +106,7 @@ An unavailable browser or profile falls back to the picker. Rules can still targ
 
 ## Privacy and link handling
 
-Only HTTP and HTTPS links are accepted. Google `/url`, Outlook Safe Links, and Facebook wrappers are unwrapped locally, to a maximum of five levels. Short links that require network requests are not expanded.
+HTTP and HTTPS links and local files are accepted. Files retain their original address, including query strings and fragments, and bypass tracking cleanup and redirect unwrapping. Web links in Google `/url`, Outlook Safe Links, and Facebook wrappers are unwrapped locally, to a maximum of five levels. Short links that require network requests are not expanded.
 
 Tracking cleanup is **off by default**. When enabled, it removes common UTM and click attribution parameters while preserving query encoding, order, duplicates, and fragments. Recognized signed and token-bearing links retain their parameters.
 
@@ -116,6 +120,7 @@ Normal use records no link history. The optional development flag `--journal PAT
 ./scripts/test.sh
 ./scripts/test.sh -c release
 ./scripts/build.sh release
+./scripts/test-file-handoffs.sh
 
 # Native UI checks: temporary settings and simulated browser launches.
 "build/Browser Picker.app/Contents/MacOS/BrowserPicker" \
@@ -133,7 +138,7 @@ To reproduce the screenshots with neutral fixture data:
 
 This renders the real app views into `docs/assets/` and never reads your Browser Picker settings or Chrome profile metadata. It briefly shows native windows and requires Safari, Chrome, and Orion installed for their icons. [CONTRIBUTING.md](CONTRIBUTING.md) describes the source layout and useful checks.
 
-See [TESTING.md](TESTING.md) for the verification record, measured performance, and platform coverage. The recorded suite includes **84 core tests** and **120 native smoke assertions**. Routing with 50 rules measured a median **13 µs** on the tested Apple Silicon Mac; browser startup and page loading are separate.
+See [TESTING.md](TESTING.md) for the verification record, measured performance, and platform coverage. The recorded suite includes **94 core tests** and **151 native smoke assertions**. Routing with 50 rules measured a median **13 µs** on the tested Apple Silicon Mac; browser startup and page loading are separate.
 
 ## Platform behavior
 

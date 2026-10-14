@@ -4,7 +4,7 @@ public enum PickerError: Error, LocalizedError, Equatable {
     case invalidURL, invalidDomain, invalidRule(String), unsupportedVersion(Int), invalidProfile
     public var errorDescription: String? {
         switch self {
-        case .invalidURL: "Enter a valid http or https link."
+        case .invalidURL: "Enter a web link, file URL, or file path."
         case .invalidDomain: "Enter a hostname, such as github.com (no path or port)."
         case .invalidRule(let reason): reason
         case .unsupportedVersion(let version): "Settings version \(version) is newer than this app supports."
@@ -56,10 +56,10 @@ public struct Rule: Codable, Equatable, Identifiable, Sendable {
         return result
     }
     public func matches(_ url: URL, source: String?) -> Bool {
-        guard let host = Self.matchingHost(url) else { return false }
-        return matches(host: host, path: url.path, source: source)
+        return matches(host: Self.matchingHost(url) ?? "", path: url.path, source: source)
     }
     static func matchingHost(_ url: URL) -> String? {
+        guard !url.isFileURL else { return nil }
         guard var host = url.host?.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: ".")) else { return nil }
         if host.contains(":") { host = (try? WebURL.normalizeDomain(host)) ?? host }
         return host
@@ -121,7 +121,7 @@ public enum Route: Equatable, Sendable {
 
 public enum Router {
     public static func route(_ request: LinkRequest, configuration: Configuration, destinations: [Destination]) throws -> Route {
-        let url = try WebURL.process(request.url, unwrap: configuration.unwrapRedirects, cleanTracking: configuration.cleanTracking)
+        let url = try OpenTarget.process(request.url, unwrap: configuration.unwrapRedirects, cleanTracking: configuration.cleanTracking)
         if request.forcePrompt { return .prompt(url) }
         // Normalize once per incoming URL, rather than once for each candidate rule.
         let host = Rule.matchingHost(url) ?? ""

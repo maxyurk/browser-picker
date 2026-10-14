@@ -113,7 +113,9 @@ final class RoutingTests: XCTestCase {
         XCTAssertThrowsError(try Rule(domain: "a.com", destinationID: "").validated())
     }
     func testInvalidSchemeRejected() {
-        XCTAssertThrowsError(try route(Configuration(), url: URL(string: "file:///etc/passwd")!))
+        for text in ["mailto:example@example.com", "javascript:alert(1)"] {
+            XCTAssertThrowsError(try route(Configuration(), url: URL(string: text)!))
+        }
     }
     func testInternationalDomainRule() throws {
         let rule = try Rule(domain: "bücher.de").validated()

@@ -96,6 +96,17 @@ final class BrowserLauncher {
         } else {
             let configuration = NSWorkspace.OpenConfiguration(); configuration.activates = !background
             configuration.allowsRunningApplicationSubstitution = false
+            if url.isFileURL {
+                // Opening a document makes Launch Services check that it exists.
+                // Deliver its address as a URL event so the browser handles the file.
+                let event = NSAppleEventDescriptor(eventClass: AEEventClass(kInternetEventClass), eventID: AEEventID(kAEGetURL), targetDescriptor: nil, returnID: AEReturnID(kAutoGenerateReturnID), transactionID: AETransactionID(kAnyTransactionID))
+                event.setParam(NSAppleEventDescriptor(string: url.absoluteString), forKeyword: AEKeyword(keyDirectObject))
+                configuration.appleEvent = event
+                NSWorkspace.shared.openApplication(at: appURL, configuration: configuration) { _, error in
+                    Task { @MainActor in completion(error) }
+                }
+                return
+            }
             NSWorkspace.shared.open([url], withApplicationAt: appURL, configuration: configuration) { _, error in
                 Task { @MainActor in completion(error) }
             }

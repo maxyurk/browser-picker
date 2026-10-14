@@ -14,6 +14,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var ready = false
     private var receivedURL = false
     private var queuePaused = false
+    var onOpenError: (String) -> Void = { message in
+        let alert = NSAlert()
+        alert.messageText = "Could not open link or file"
+        alert.informativeText = message
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
     let started = CFAbsoluteTimeGetCurrent()
 
     override init() {
@@ -40,7 +47,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         picker.onChoose = { [weak self] destination, remember, privateMode, background in
             guard let self, let request = activeRequest, !launching else { return }
             // Remember the final (unwrapped) destination, not a redirect service.
-            let host = remember ? picker.url?.host : nil
+            let host = remember && picker.url?.isFileURL == false ? picker.url?.host : nil
             open(picker.url ?? request.url, destination: destination, privateWindow: privateMode, background: background, rememberHost: host)
         }
         picker.onCancel = { [weak self] in
@@ -62,8 +69,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } else if CommandLine.arguments.contains("--integration-test") {
             BrowserIntegrationTests.run(self)
         } else if let index = CommandLine.arguments.firstIndex(of: "--pick"), CommandLine.arguments.indices.contains(index + 1) {
-            do { enqueue(LinkRequest(url: try WebURL.parse(CommandLine.arguments[index + 1], allowBareHost: true), forcePrompt: true)) }
-            catch { store.errorMessage = error.localizedDescription; settings.present() }
+            do { enqueue(LinkRequest(url: try OpenTarget.parse(CommandLine.arguments[index + 1], allowBareHost: true), forcePrompt: true)) }
+            catch { reportOpenError(error) }
         } else {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
                 guard let self, !receivedURL, !store.loginEnabled else { return }
@@ -86,8 +93,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     func applicationDidBecomeActive(_ notification: Notification) { store.refreshStatus() }
     func enqueue(_ request: LinkRequest) {
-        do { _ = try WebURL.parse(request.url.absoluteString) }
-        catch { store.errorMessage = error.localizedDescription; if ready { settings.present() }; return }
+        receivedURL = true
+        do { _ = try OpenTarget.process(request.url, unwrap: false, cleanTracking: false) }
+        catch { reportOpenError(error); return }
         let wasPaused = queuePaused
         queue.append(request); queuePaused = false; picker.updateQueued(queue.count)
         if wasPaused { rebuildMenu() }
@@ -106,7 +114,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             case .open(let url, let destination, let privateMode): open(url, destination: destination, privateWindow: privateMode, background: false)
             }
         } catch {
-            store.errorMessage = error.localizedDescription; activeRequest = nil
+            reportOpenError(error); activeRequest = nil
             DispatchQueue.main.async { [weak self] in self?.pump() }
         }
     }
@@ -165,11 +173,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let id = sender.representedObject as? String else { return }
         store.update { $0.defaultDestinationID = id }
     }
-    @objc private func openClipboard() {
+    @objc func openClipboard() {
         do {
+            if let files = NSPasteboard.general.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL], !files.isEmpty {
+                for file in files { enqueue(LinkRequest(url: file, forcePrompt: true)) }
+                return
+            }
             guard let text = NSPasteboard.general.string(forType: .string) else { throw PickerError.invalidURL }
-            enqueue(LinkRequest(url: try WebURL.parse(text, allowBareHost: true), forcePrompt: true))
-        } catch { store.errorMessage = error.localizedDescription; settings.present() }
+            enqueue(LinkRequest(url: try OpenTarget.parse(text, allowBareHost: true), forcePrompt: true))
+        } catch { reportOpenError(error) }
+    }
+    private func reportOpenError(_ error: Error) {
+        receivedURL = true
+        if ready { onOpenError(error.localizedDescription) }
+        else { DispatchQueue.main.async { [weak self] in self?.onOpenError(error.localizedDescription) } }
     }
     @objc private func makeDefault() { store.makeDefault(); settings.present() }
     @objc func resumeQueuedLinks() { queuePaused = false; rebuildMenu(); pump() }

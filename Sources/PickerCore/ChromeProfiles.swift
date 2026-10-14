@@ -22,7 +22,7 @@ public enum ChromeProfiles {
             result.append("--profile-directory=" + profile)
         }
         if privateWindow { result.append("--incognito") }
-        result.append(try WebURL.parse(url.absoluteString).absoluteString)
+        result.append(try OpenTarget.process(url, unwrap: false, cleanTracking: false).absoluteString)
         return result
     }
 }

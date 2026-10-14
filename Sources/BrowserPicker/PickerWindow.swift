@@ -95,6 +95,7 @@ final class PickerWindowController: NSWindowController, NSWindowDelegate {
     private let rememberHint = NSTextField(labelWithString: "")
     private var manuallyRemember = false
     private var commandHeld = false
+    private var canRememberWebsite: Bool { url?.isFileURL == false && !(url?.host ?? "").isEmpty }
     private var baseHeading = "Open link in…"
     private var cachedDestinations: [Destination]?
     private var cachedRowsHeight: CGFloat?
@@ -126,9 +127,10 @@ final class PickerWindowController: NSWindowController, NSWindowDelegate {
             returnApplication = frontmost
         }
         self.url = url; selected = 0; manuallyRemember = false; commandHeld = false; remember.state = .off; privateMode.state = .off
-        baseHeading = failure == nil ? "Open link in…" : "Choose another browser"
-        domainLabel.stringValue = url.host ?? "Website"
-        detail.stringValue = failure ?? url.absoluteString
+        window?.title = url.isFileURL ? "Open file" : "Open link"
+        baseHeading = failure == nil ? (url.isFileURL ? "Open file in…" : "Open link in…") : "Choose another browser"
+        domainLabel.stringValue = url.isFileURL ? (url.lastPathComponent.isEmpty ? "Local file" : url.lastPathComponent) : (url.host ?? "Website")
+        detail.stringValue = failure ?? (url.isFileURL ? url.path : url.absoluteString)
         detail.textColor = failure == nil ? .secondaryLabelColor : .systemRed
         detail.toolTip = url.absoluteString; detail.setAccessibilityLabel(url.absoluteString)
         updateQueued(queued)
@@ -160,6 +162,7 @@ final class PickerWindowController: NSWindowController, NSWindowDelegate {
         heading.font = .systemFont(ofSize: 22, weight: .semibold)
         stack.addArrangedSubview(heading)
         domainLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        domainLabel.lineBreakMode = .byTruncatingMiddle; domainLabel.maximumNumberOfLines = 1
         stack.addArrangedSubview(domainLabel)
         detail.font = .systemFont(ofSize: 11)
         detail.lineBreakMode = .byTruncatingMiddle; detail.maximumNumberOfLines = 1
@@ -310,20 +313,23 @@ final class PickerWindowController: NSWindowController, NSWindowDelegate {
             detail.stringValue = "Private-window routing is unavailable for this browser."
             detail.textColor = .systemRed; NSSound.beep(); return
         }
-        onChoose?(destination, manuallyRemember || flags.contains(.command), wantsPrivate, flags.contains(.control))
+        onChoose?(destination, canRememberWebsite && (manuallyRemember || flags.contains(.command)), wantsPrivate, flags.contains(.control))
     }
     private func modifiersChanged(_ flags: NSEvent.ModifierFlags) {
         commandHeld = flags.contains(.command)
         updateRememberAppearance()
     }
     private func updateRememberAppearance() {
-        let effectiveRemember = manuallyRemember || commandHeld
+        remember.isHidden = !canRememberWebsite; remember.isEnabled = canRememberWebsite
+        let effectiveRemember = canRememberWebsite && (manuallyRemember || commandHeld)
         remember.state = effectiveRemember ? .on : .off
         heading.stringValue = effectiveRemember ? "Always open this site in…" : baseHeading
         for row in rows where row.commandHeld != commandHeld { row.commandHeld = commandHeld }
         let count = min(rows.count, 9)
         let shortcuts = count > 1 ? "⌘1–⌘\(count)" : count == 1 ? "⌘1" : "⌘-click"
-        rememberHint.stringValue = commandHeld ? "\(shortcuts) opens and remembers this website" : "Hold ⌘ to remember · \(shortcuts)"
+        rememberHint.stringValue = canRememberWebsite
+            ? (commandHeld ? "\(shortcuts) opens and remembers this website" : "Hold ⌘ to remember · \(shortcuts)")
+            : "Choose a browser. Files open once."
     }
     @objc private func rememberClicked() {
         if !commandHeld { manuallyRemember = remember.state == .on }

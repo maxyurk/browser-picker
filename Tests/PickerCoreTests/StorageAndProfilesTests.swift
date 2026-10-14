@@ -119,6 +119,6 @@ final class StorageAndProfilesTests: XCTestCase {
         XCTAssertEqual(try ChromeProfiles.arguments(url: url, profile: "Profile 2", privateWindow: true), ["--profile-directory=Profile 2", "--incognito", url.absoluteString])
         XCTAssertEqual(try ChromeProfiles.arguments(url: url, profile: nil, privateWindow: false), [url.absoluteString])
         XCTAssertThrowsError(try ChromeProfiles.arguments(url: url, profile: "../evil", privateWindow: false))
-        XCTAssertThrowsError(try ChromeProfiles.arguments(url: URL(string: "file:///a")!, profile: nil, privateWindow: false))
+        XCTAssertEqual(try ChromeProfiles.arguments(url: URL(string: "file:///a")!, profile: nil, privateWindow: false), ["file:///a"])
     }
 }

@@ -79,11 +79,15 @@ enum SmokeTests {
         check(NSPasteboard.general.string(forType: .string) == url.absoluteString, "copy exact URL")
         check(app.activeRequest == nil, "copy completes request")
         check(app.store.configuration.rules.isEmpty, "Command-C does not remember a website")
-        NSPasteboard.general.clearContents()
-        let items = pasteboard.map { representations in
-            let item = NSPasteboardItem(); for (type, data) in representations { item.setData(data, forType: type) }; return item
+        func restorePasteboard() {
+            NSPasteboard.general.clearContents()
+            // Pasteboard items cannot be reused after their first write.
+            let items = pasteboard.map { representations in
+                let item = NSPasteboardItem(); for (type, data) in representations { item.setData(data, forType: type) }; return item
+            }
+            NSPasteboard.general.writeObjects(items)
         }
-        NSPasteboard.general.writeObjects(items)
+        restorePasteboard()
         app.enqueue(LinkRequest(url: url, forcePrompt: true)); key(53, "")
         check(app.activeRequest == nil && app.picker.window?.isVisible == false, "escape dismisses")
         app.enqueue(LinkRequest(url: url, forcePrompt: true)); key(18, "1")
@@ -149,6 +153,51 @@ enum SmokeTests {
         check(app.store.configuration.rules.isEmpty, "failed launch does not save remembered choice")
         app.launcher.simulated = true; key(18, "1")
         check(app.activeRequest == nil, "failed link can be retried in another browser")
+        // Exercise the same URL event used by Finder and Launch Services.
+        var openErrors: [String] = []
+        app.onOpenError = { openErrors.append($0) }
+        let fileURLs = [URL(fileURLWithPath: "/tmp/Browser Picker 日本語 #100%+?.html"),
+                        URL(fileURLWithPath: "/tmp/browser-picker-missing.unknown"),
+                        URL(string: "file://localhost/tmp/report.html?utm_source=keep#section")!]
+        for file in fileURLs {
+            app.application(NSApp, open: [file])
+            check(app.activeRequest?.url == file && app.picker.window?.isVisible == true, "file URL reaches picker unchanged")
+            check(app.picker.window?.title == "Open file", "file picker identifies a file")
+            let fileRemember = findButton(app.picker.window?.contentView, id: "remember-domain")
+            modifiers(.command)
+            check(fileRemember?.isHidden == true && fileRemember?.state == .off, "file picker does not offer website remembering on Command")
+            check(commandKey(18, "1"), "Command-number can open a file")
+            check(opened.last == file.absoluteString && app.activeRequest == nil, "file address reaches browser unchanged")
+            check(app.store.configuration.rules.isEmpty, "opening a file never creates a website rule")
+        }
+        check(openErrors.isEmpty && app.store.errorMessage == nil && app.settings.window?.isVisible == false, "file opens produce no validation warning or settings window")
+        app.application(NSApp, open: fileURLs)
+        for file in fileURLs {
+            check(app.activeRequest?.url == file, "multiple Finder files retain their order")
+            key(18, "1"); app.resumeQueuedLinks()
+        }
+        check(app.activeRequest == nil, "multiple file queue drains fully")
+        NSPasteboard.general.clearContents(); NSPasteboard.general.writeObjects(fileURLs as [NSURL])
+        app.openClipboard()
+        for file in fileURLs {
+            check(app.activeRequest?.url == file, "Finder clipboard files use file URLs")
+            key(18, "1"); app.resumeQueuedLinks()
+        }
+        NSPasteboard.general.clearContents(); NSPasteboard.general.setString(fileURLs[0].path, forType: .string)
+        app.openClipboard(); key(19, "2", flags: .option)
+        check(opened.last == fileURLs[0].absoluteString && privateFlags.last == true, "clipboard file path works with private browser routing")
+        restorePasteboard()
+        app.enqueue(LinkRequest(url: fileURLs[0], forcePrompt: true))
+        app.launcher.simulated = false
+        app.picker.onChoose?(missing, true, false, false)
+        check(app.activeRequest?.url == fileURLs[0] && app.picker.window?.isVisible == true, "failed browser launch retains file for retry")
+        app.launcher.simulated = true; key(18, "1")
+        check(app.store.configuration.rules.isEmpty, "file retry cannot remember a website")
+        app.enqueue(LinkRequest(url: URL(string: "mailto:example@example.com")!))
+        check(openErrors.count == 1 && app.store.errorMessage == nil && app.settings.window?.isVisible == false, "invalid link errors stay out of Settings")
+        app.enqueue(LinkRequest(url: url, forcePrompt: true))
+        check(findButton(app.picker.window?.contentView, id: "remember-domain")?.isHidden == false, "website remembering returns after opening files")
+        key(53, "")
         app.store.update { $0.hiddenDestinationIDs = Set(app.store.destinations.map(\.id)) }
         app.enqueue(LinkRequest(url: url, forcePrompt: true))
         check(app.picker.rows.count == app.store.destinations.count, "all-hidden configuration still offers browsers")

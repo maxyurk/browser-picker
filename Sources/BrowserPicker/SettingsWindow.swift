@@ -158,7 +158,7 @@ struct SettingsView: View {
                             HStack(spacing: 10) {
                                 Toggle("Enable rule", isOn: Binding(get: { rule.enabled }, set: { value in store.update { config in if let current = config.rules.firstIndex(where: { $0.id == rule.id }) { config.rules[current].enabled = value } } })).labelsHidden().toggleStyle(.checkbox)
                                 VStack(alignment: .leading, spacing: 3) {
-                                    Text(rule.domain.isEmpty ? "Any website" : rule.domain + rule.pathPrefix).fontWeight(.medium)
+                                    Text(rule.domain.isEmpty ? "Any link or file" + rule.pathPrefix : rule.domain + rule.pathPrefix).fontWeight(.medium)
                                     Text(description(rule)).font(.caption).foregroundStyle(.secondary)
                                 }
                                 Spacer()
@@ -181,7 +181,7 @@ struct SettingsView: View {
         store.update { if $0.rules.indices.contains(index), $0.rules.indices.contains(index + offset) { $0.rules.swapAt(index, index + offset) } }
     }
     private func test() {
-        do { onTest(try WebURL.parse(testURL, allowBareHost: true)) }
+        do { onTest(try OpenTarget.parse(testURL, allowBareHost: true)) }
         catch { localError = error.localizedDescription }
     }
     private func addBrowser() {
@@ -218,7 +218,7 @@ struct RuleEditor: View {
                 }.onChange(of: rule.destinationID) { _, _ in if !supportsPrivate { rule.privateWindow = false } }
                 Toggle("Private window", isOn: $rule.privateWindow).disabled(!supportsPrivate)
             }
-            Text("Leave the website blank to match every link from a source app. A path prefix matches the beginning of the URL path.").font(.caption).foregroundStyle(.secondary)
+            Text("Leave the website blank to match links and files from a source app. A path prefix matches the beginning of the URL path.").font(.caption).foregroundStyle(.secondary)
             if let error { Text(error).font(.caption).foregroundStyle(.red) }
             HStack {
                 Spacer()

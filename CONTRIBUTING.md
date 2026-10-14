@@ -39,6 +39,8 @@ test_directory=$(mktemp -d /tmp/browser-picker-check.XXXXXX)
 
 Use temporary settings and illustrative links. The `--journal` flag explicitly logs URLs; normal use does not. `--integration-test` opens real test pages in the installed browsers, so run it only when real handoffs need checking. See [TESTING.md](TESTING.md) for the existing verification record and its limits.
 
+For file-launch changes, run `./scripts/test-file-handoffs.sh`. It creates a temporary native receiver and checks the actual addresses delivered on cold and warm launches, including nonexistent files and unknown extensions. It leaves your Browser Picker settings and file associations unchanged. To test a fixture in the installed browsers, add `--integration-file /absolute/path/to/fixture` to an integration run.
+
 For documentation images, `./scripts/screenshots.sh` renders the production views with neutral fixtures, without reading your Browser Picker settings or Chrome profile metadata. It briefly presents native windows. Safari, Chrome, and Orion must be installed for their icons to appear. The helper executable is separate from the distributed app.
 
 For the website, follow [docs/README.md](docs/README.md). Keep images, fonts, and scripts local, and preserve relative URLs so project-path GitHub Pages hosting works.
