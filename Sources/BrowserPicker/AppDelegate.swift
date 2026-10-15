@@ -7,7 +7,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let launcher = BrowserLauncher()
     lazy var picker = PickerWindowController(store: store)
     lazy var settings = SettingsWindowController(store: store) { [weak self] in self?.enqueue(LinkRequest(url: $0, forcePrompt: true)) }
-    private var statusItem: NSStatusItem?
+    private(set) var statusItem: NSStatusItem?
     private var queue = RequestQueue()
     private(set) var activeRequest: LinkRequest?
     private var launching = false
@@ -157,7 +157,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(.separator())
         let ask = menu.addItem(withTitle: "Always ask", action: #selector(setDefault(_:)), keyEquivalent: "")
         ask.target = self; ask.representedObject = "prompt"; ask.state = store.configuration.defaultDestinationID == "prompt" ? .on : .off
-        for destination in store.destinations {
+        for destination in store.shownDestinations {
             let item = menu.addItem(withTitle: destination.name, action: #selector(setDefault(_:)), keyEquivalent: "")
             item.target = self; item.representedObject = destination.id
             item.state = store.configuration.defaultDestinationID == destination.id ? .on : .off

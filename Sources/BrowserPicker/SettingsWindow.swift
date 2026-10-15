@@ -105,7 +105,7 @@ struct SettingsView: View {
     }
     private var browsers: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Shown in the picker").font(.headline)
+            Text("Shown in the picker and menu bar").font(.headline)
             Text("Browsers found by macOS and available profiles. Numbers follow this order.").font(.caption).foregroundStyle(.secondary)
             ScrollView {
                 VStack(spacing: 8) {

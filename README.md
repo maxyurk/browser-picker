@@ -66,7 +66,7 @@ open "build/Browser Picker.app"
 
 1. Open **Settings → General → Make default…** and accept the macOS prompt. If needed, choose Browser Picker in **System Settings → Desktop & Dock → Default web browser**. The app verifies both HTTP and HTTPS before showing **Active**.
 2. Leave **For unmatched links → Always ask**, or choose your preferred browser.
-3. In **Browsers**, choose which browsers and profiles appear. Use **Refresh browsers** after installing a browser or renaming a profile. If a browser is not detected, choose **Add browser…** and select its `.app`.
+3. In **Browsers**, choose which browsers and profiles appear in the picker and menu bar. Changes take effect immediately. Use **Refresh browsers** after installing a browser or renaming a profile. If a browser is not detected, choose **Add browser…** and select its `.app`.
 4. Optionally enable **Launch at login**. Approve it in Login Items if macOS requests it.
 
 <p align="center"><img src="docs/assets/settings.png" width="640" alt="General settings with Always ask, outside-click dismissal, and local link cleanup options"></p>
@@ -147,7 +147,7 @@ To reproduce the screenshots with neutral fixture data:
 
 This renders the real app views into `docs/assets/` and never reads your Browser Picker settings or Chrome profile metadata. It briefly shows native windows and requires Safari, Chrome, and Orion installed for their icons. [CONTRIBUTING.md](CONTRIBUTING.md) describes the source layout and useful checks.
 
-See [TESTING.md](TESTING.md) for the verification record, measured performance, and platform coverage. The recorded suite includes **94 core tests** and **151 native smoke assertions**. Routing with 50 rules measured a median **13 µs** on the tested Apple Silicon Mac; browser startup and page loading are separate.
+See [TESTING.md](TESTING.md) for the verification record, measured performance, and platform coverage. The recorded suite includes **94 core tests** and **157 native smoke assertions**. Routing with 50 rules measured a median **13 µs** on the tested Apple Silicon Mac; browser startup and page loading are separate.
 
 App versions come from stable Git tags such as `v1.0.1`. The [release workflow](.github/workflows/release.yml) can automatically bump patch, minor, or major, build a universal app, create the tag, and publish the downloads. See [RELEASING.md](RELEASING.md) for the release controls and versioning rules.
 

@@ -99,3 +99,9 @@ The published DMG, ZIP, and build metadata matched their SHA-256 checksums. The 
 Version regressions cover numeric tag ordering, reachable development tags, patch/minor/major resets, the first explicit release, rejecting malformed or unsafe tag text, preventing downgrades or moved tags, retrying an existing tag on the same commit, exact tag/checkout verification, source archives, nested repositories, environment overrides, and stamping metadata without changing the bundle identity. Resolving the next version after fetching `v1.0.1` produced **v1.0.2** without creating a tag.
 
 The latest-release DMG URL returned HTTP 200. Website download buttons use that stable URL, with installation steps for dragging the app to Applications and explicit first-launch guidance for the non-notarized build. Static asset/anchor checks, JavaScript syntax, screenshot switching, layout, and browser error logs were checked for the revised page.
+
+## Menu bar browser selection — 15 October 2026
+
+The menu bar now uses the same selected destinations as the picker, including individual browser profiles. Visibility changes rebuild both immediately, and the Browsers settings heading describes both locations.
+
+Ten native regressions inspect the real status menu and exercise its default-selection action. They cover initial ordering, deselecting a browser, independently deselecting a profile, retaining a selected profile while its browser is hidden, refreshing discovery, leaving just one profile selected, changing and marking the default, retaining Always ask, and restoring deselected entries. Before the fix, four filtering checks failed. The fixed public-identifier app passed **157 native assertions**, and all **94 core tests passed in release mode**. The existing picker selection-preservation check remains covered.

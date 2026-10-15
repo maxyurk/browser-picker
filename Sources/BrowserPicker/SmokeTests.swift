@@ -45,6 +45,10 @@ enum SmokeTests {
             if let button = view as? NSButton, button.accessibilityIdentifier() == id { return button }
             return view.subviews.lazy.compactMap { findButton($0, id: id) }.first
         }
+        func menuDestinationIDs() -> [String] {
+            (app.statusItem?.menu?.items ?? []).compactMap { $0.representedObject as? String }.filter { $0 != "prompt" }
+        }
+        check(menuDestinationIDs() == destinations.map(\.id), "menu initially includes selected browsers and profiles in order")
         let url = URL(string: "https://example.com/a?x=1#fragment")!
         // Keep unrelated real desktop clicks from interrupting keyboard regressions.
         // Outside-click behavior is exercised separately below with the option enabled.
@@ -64,9 +68,30 @@ enum SmokeTests {
         let hiddenID = app.store.shownDestinations[0].id
         app.store.update { $0.hiddenDestinationIDs.insert(hiddenID) }
         check(!app.picker.rows.contains { $0.destination.id == hiddenID }, "browser visibility changes refresh an open picker")
-        app.store.update { $0.hiddenDestinationIDs.removeAll() }
-        check(app.picker.rows.count == destinations.count, "unhidden browsers return to an open picker")
         check(app.picker.rows[app.picker.selected].destination.id == "com.google.Chrome", "refresh preserves the selected browser identity")
+        check(menuDestinationIDs() == ["com.google.Chrome", "com.google.Chrome:Default", "com.apple.Safari"], "menu immediately removes a deselected browser")
+        app.store.update { $0.hiddenDestinationIDs.insert("com.google.Chrome:Default") }
+        check(menuDestinationIDs() == ["com.google.Chrome", "com.apple.Safari"], "menu hides a deselected profile independently of its browser")
+        app.store.update {
+            $0.hiddenDestinationIDs.insert("com.google.Chrome")
+            $0.hiddenDestinationIDs.remove("com.google.Chrome:Default")
+        }
+        check(menuDestinationIDs() == ["com.google.Chrome:Default", "com.apple.Safari"], "menu retains a selected profile when its browser is deselected")
+        app.store.refresh()
+        check(menuDestinationIDs() == ["com.google.Chrome:Default", "com.apple.Safari"], "browser refresh preserves the filtered menu")
+        app.store.update { $0.hiddenDestinationIDs.insert("com.apple.Safari") }
+        check(menuDestinationIDs() == ["com.google.Chrome:Default"], "menu shows only the last selected profile")
+        if let menu = app.statusItem?.menu, let index = menu.items.firstIndex(where: { ($0.representedObject as? String) == "com.google.Chrome:Default" }) {
+            menu.performActionForItem(at: index)
+            check(app.store.configuration.defaultDestinationID == "com.google.Chrome:Default", "filtered menu selects the correct default profile")
+            check(app.statusItem?.menu?.items.first(where: { ($0.representedObject as? String) == "com.google.Chrome:Default" })?.state == .on, "filtered menu marks the selected default")
+        } else {
+            check(false, "filtered menu contains the selected profile action")
+        }
+        check(app.statusItem?.menu?.items.contains(where: { ($0.representedObject as? String) == "prompt" }) == true, "Always ask remains available with hidden browsers")
+        app.store.update { $0.hiddenDestinationIDs.removeAll(); $0.defaultDestinationID = "prompt" }
+        check(app.picker.rows.count == destinations.count, "unhidden browsers return to an open picker")
+        check(menuDestinationIDs() == destinations.map(\.id), "reselected browsers and profiles return to the menu in order")
         app.picker.show(url: url, queued: 0)
         app.picker.window?.contentView?.layoutSubtreeIfNeeded()
         check(app.picker.rows.allSatisfy { $0.frame.width <= ($0.enclosingScrollView?.contentView.bounds.width ?? 0) }, "row shortcuts fit inside the scroll viewport")
