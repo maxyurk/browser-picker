@@ -46,6 +46,8 @@ final class BrowserRow: NSButton {
         image.translatesAutoresizingMaskIntoConstraints = false; image.setAccessibilityElement(false); addSubview(image)
         let name = NSTextField(labelWithString: destination.name)
         name.font = .systemFont(ofSize: 14, weight: .medium); name.lineBreakMode = .byTruncatingTail
+        name.maximumNumberOfLines = 1
+        name.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         name.translatesAutoresizingMaskIntoConstraints = false; name.setAccessibilityElement(false); addSubview(name)
         shortcut.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium); shortcut.textColor = .secondaryLabelColor
         shortcut.translatesAutoresizingMaskIntoConstraints = false; shortcut.setAccessibilityElement(false); addSubview(shortcut)
@@ -82,6 +84,7 @@ final class BrowserRow: NSButton {
 
 @MainActor
 final class PickerWindowController: NSWindowController, NSWindowDelegate {
+    private static let contentWidth: CGFloat = 432
     let store: AppStore
     private(set) var url: URL?
     private(set) var rows: [BrowserRow] = []
@@ -110,7 +113,7 @@ final class PickerWindowController: NSWindowController, NSWindowDelegate {
     var onSettings: (() -> Void)?
     init(store: AppStore) {
         self.store = store
-        let panel = PickerPanel(contentRect: NSRect(x: 0, y: 0, width: 432, height: 420), styleMask: [.titled, .fullSizeContentView], backing: .buffered, defer: false)
+        let panel = PickerPanel(contentRect: NSRect(x: 0, y: 0, width: Self.contentWidth, height: 420), styleMask: [.titled, .fullSizeContentView], backing: .buffered, defer: false)
         panel.title = "Open link"; panel.titleVisibility = .hidden; panel.titlebarAppearsTransparent = true
         panel.isFloatingPanel = true; panel.level = .floating; panel.hidesOnDeactivate = false
         panel.isMovableByWindowBackground = true; panel.isReleasedWhenClosed = false
@@ -159,7 +162,11 @@ final class PickerWindowController: NSWindowController, NSWindowDelegate {
         let content = NSVisualEffectView(); content.material = .popover; content.blendingMode = .behindWindow; content.state = .active
         let stack = NSStackView(); stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 6
         stack.translatesAutoresizingMaskIntoConstraints = false; content.addSubview(stack)
+        // setContentSize alone does not stop AppKit expanding a window to its
+        // content's fitting width, including when a cached label changes later.
+        content.widthAnchor.constraint(equalToConstant: Self.contentWidth).isActive = true
         heading.font = .systemFont(ofSize: 22, weight: .semibold)
+        heading.lineBreakMode = .byTruncatingTail; heading.maximumNumberOfLines = 1
         stack.addArrangedSubview(heading)
         domainLabel.font = .systemFont(ofSize: 14, weight: .medium)
         domainLabel.lineBreakMode = .byTruncatingMiddle; domainLabel.maximumNumberOfLines = 1
@@ -167,6 +174,10 @@ final class PickerWindowController: NSWindowController, NSWindowDelegate {
         detail.font = .systemFont(ofSize: 11)
         detail.lineBreakMode = .byTruncatingMiddle; detail.maximumNumberOfLines = 1
         stack.addArrangedSubview(detail); stack.setCustomSpacing(16, after: detail)
+        for label in [heading, domainLabel, detail] {
+            label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            label.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+        }
         let rowStack = NSStackView(); rowStack.orientation = .vertical; rowStack.alignment = .leading; rowStack.spacing = 6
         rowStack.translatesAutoresizingMaskIntoConstraints = false
         rows = store.shownDestinations.enumerated().map { index, destination in
@@ -178,7 +189,7 @@ final class PickerWindowController: NSWindowController, NSWindowDelegate {
         if rows.isEmpty { rowStack.addArrangedSubview(NSTextField(labelWithString: "No browsers found. Add one in Settings.")) }
         let totalRowsHeight = max(58, CGFloat(rows.count) * 64 - 6)
         let visibleRowsHeight = min(totalRowsHeight, maximumRowsHeight())
-        let document = BrowserListView(frame: NSRect(x: 0, y: 0, width: 384, height: totalRowsHeight))
+        let document = BrowserListView(frame: NSRect(x: 0, y: 0, width: Self.contentWidth - 48, height: totalRowsHeight))
         document.translatesAutoresizingMaskIntoConstraints = false; document.addSubview(rowStack)
         NSLayoutConstraint.activate([
             rowStack.leadingAnchor.constraint(equalTo: document.leadingAnchor), rowStack.trailingAnchor.constraint(equalTo: document.trailingAnchor),
@@ -213,7 +224,7 @@ final class PickerWindowController: NSWindowController, NSWindowDelegate {
         ])
         window?.contentView = content
         let height = 266 + visibleRowsHeight
-        window?.setContentSize(NSSize(width: 432, height: height))
+        window?.setContentSize(NSSize(width: Self.contentWidth, height: height))
     }
     private func maximumRowsHeight() -> CGFloat {
         let screen = NSScreen.screens.first(where: { NSMouseInRect(NSEvent.mouseLocation, $0.frame, false) }) ?? NSScreen.main

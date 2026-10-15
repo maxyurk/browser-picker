@@ -25,6 +25,7 @@ enum SmokeTests {
             checks += 1; if !condition() { failures.append(name) }
         }
         BrowserCatalogChecks.run(check: { value, name in check(value, name) })
+        PickerLayoutChecks.run(check: { value, name in check(value, name) })
         func key(_ code: UInt16, _ text: String, flags: NSEvent.ModifierFlags = []) {
             if let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 0, windowNumber: app.picker.window?.windowNumber ?? 0, context: nil, characters: text, charactersIgnoringModifiers: text, isARepeat: false, keyCode: code) {
                 app.picker.window?.sendEvent(event)

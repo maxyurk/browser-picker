@@ -105,3 +105,9 @@ The latest-release DMG URL returned HTTP 200. Website download buttons use that 
 The menu bar now uses the same selected destinations as the picker, including individual browser profiles. Visibility changes rebuild both immediately, and the Browsers settings heading describes both locations.
 
 Ten native regressions inspect the real status menu and exercise its default-selection action. They cover initial ordering, deselecting a browser, independently deselecting a profile, retaining a selected profile while its browser is hidden, refreshing discovery, leaving just one profile selected, changing and marking the default, retaining Always ask, and restoring deselected entries. Before the fix, four filtering checks failed. The fixed public-identifier app passed **157 native assertions**, and all **94 core tests passed in release mode**. The existing picker selection-preservation check remains covered.
+
+## Popup width — 15 October 2026
+
+Long links could increase the window's Auto Layout fitting width beyond the screen. Reusing that window for a short link did not restore its original width. The content now has a required 432-point width, and headings, domains, URLs, and browser names truncate within the available space instead of expanding the window. The full URL remains available in its tooltip, accessibility label, and Copy link action.
+
+Twenty-nine native assertions cover a short link, a long host and URL on a reused window, Command remembering, a long Unicode filename, a long browser error, returning to a short link, and a fresh window with an unusually long browser/profile name. They check window width, fitting width, row containment, screen bounds, and the complete accessible URL. The original layout failed **23** of these assertions; the fixed public-identifier app passed all **186 native assertions**. All **94 core tests passed in release mode**, and strict code-signature verification passed.

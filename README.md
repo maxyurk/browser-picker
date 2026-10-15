@@ -147,7 +147,7 @@ To reproduce the screenshots with neutral fixture data:
 
 This renders the real app views into `docs/assets/` and never reads your Browser Picker settings or Chrome profile metadata. It briefly shows native windows and requires Safari, Chrome, and Orion installed for their icons. [CONTRIBUTING.md](CONTRIBUTING.md) describes the source layout and useful checks.
 
-See [TESTING.md](TESTING.md) for the verification record, measured performance, and platform coverage. The recorded suite includes **94 core tests** and **157 native smoke assertions**. Routing with 50 rules measured a median **13 µs** on the tested Apple Silicon Mac; browser startup and page loading are separate.
+See [TESTING.md](TESTING.md) for the verification record, measured performance, and platform coverage. The recorded suite includes **94 core tests** and **186 native smoke assertions**. Routing with 50 rules measured a median **13 µs** on the tested Apple Silicon Mac; browser startup and page loading are separate.
 
 App versions come from stable Git tags such as `v1.0.1`. The [release workflow](.github/workflows/release.yml) can automatically bump patch, minor, or major, build a universal app, create the tag, and publish the downloads. See [RELEASING.md](RELEASING.md) for the release controls and versioning rules.
 
