@@ -39,7 +39,7 @@ release=json.load(open(sys.argv[1]))
 build=json.load(open('build/published/BuildInfo.json'))
 assert build['commit']==sys.argv[2] and build['tag']==sys.argv[3], 'Published release was built from another commit or tag'
 assets={asset['name'] for asset in release['assets'] if asset['size']>0}
-assert {'Browser-Picker.dmg','Browser-Picker.zip','BuildInfo.json','SHA256SUMS.txt'}<=assets, 'Published release is incomplete'
+assert {'Browser-Picker.dmg','Browser-Picker.zip','BuildInfo.json','SHA256SUMS.txt','appcast.xml'}<=assets, 'Published release is incomplete'
 print('Release already published; keeping its original assets.')
 PY
         exit 0
@@ -52,6 +52,10 @@ Download **Browser-Picker.dmg**, open it, and drag **Browser Picker.app** to **A
 
 The app supports generic browsers, compatible Chromium profiles, website rules, Command-number shortcuts, and local files of any type. Routing stays on your Mac.
 
+Automatic updates are now built in: verified updates are checked weekly from GitHub, downloaded in the background, and installed when you quit. Check manually or change update preferences in Settings → Updates. Failed checks stay quiet and retry on the normal schedule. No telemetry or link data is sent.
+
+If you have version 1.0.1 or earlier, download this release once to enable future in-app updates.
+
 This build is ad-hoc signed and is not Apple-notarized. If macOS blocks the first launch, use **System Settings → Privacy & Security → Open Anyway** after checking the source and release. No Xcode installation is required.
 
 The ZIP is an alternative to the disk image. SHA256SUMS.txt verifies the downloads; BuildInfo.json records the tag, source commit, and architectures. Builds and core tests run on GitHub's Apple Silicon and Intel macOS runners.
@@ -59,7 +63,7 @@ NOTES
     gh release create "$BROWSER_PICKER_RELEASE_TAG" --verify-tag --target "$RELEASE_COMMIT" \
         --title "Browser Picker $RELEASE_VERSION" --draft --notes-file build/release-notes.md
 fi
-gh release upload "$BROWSER_PICKER_RELEASE_TAG" build/release/Browser-Picker.dmg build/release/Browser-Picker.zip build/release/BuildInfo.json build/release/SHA256SUMS.txt --clobber
+gh release upload "$BROWSER_PICKER_RELEASE_TAG" build/release/Browser-Picker.dmg build/release/Browser-Picker.zip build/release/BuildInfo.json build/release/SHA256SUMS.txt build/release/appcast.xml --clobber
 task_latest_tag=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name 2>/dev/null || true)
 task_is_latest=$(python3 - "$BROWSER_PICKER_RELEASE_TAG" "$task_latest_tag" <<'PY'
 import sys

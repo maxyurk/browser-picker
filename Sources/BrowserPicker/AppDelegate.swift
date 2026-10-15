@@ -2,7 +2,7 @@ import AppKit
 import PickerCore
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     let store: AppStore
     let launcher = BrowserLauncher()
     lazy var picker = PickerWindowController(store: store)
@@ -44,6 +44,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         store.onChange = { [weak self] in
             self?.rebuildMenu(); self?.picker.refreshDestinations(); self?.picker.refreshOutsideClickMonitoring()
         }
+        store.updater.onChange = { [weak self] in self?.rebuildMenu() }
+        store.updater.mayRestart = { [weak self] in
+            guard let self else { return false }
+            return activeRequest == nil && !launching && queue.count == 0
+        }
+        // Keep framework setup and networking off the incoming-link startup path.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in self?.store.updater.start() }
         picker.onChoose = { [weak self] destination, remember, privateMode, background in
             guard let self, let request = activeRequest, !launching else { return }
             // Remember the final (unwrapped) destination, not a redirect service.
@@ -60,6 +67,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             journal(["event": "cancelled", "reason": "outside-click", "url": activeRequest?.url.absoluteString ?? ""])
             queuePaused = true
             picker.dismiss(); activeRequest = nil; rebuildMenu()
+            store.updater.resumeInstallationIfIdle()
         }
         picker.onSettings = { [weak self] in self?.settings.present() }
         journal(["event": "ready", "startup_ms": (CFAbsoluteTimeGetCurrent() - started) * 1000, "destinations": store.destinations.map(\.id)])
@@ -103,6 +111,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if ready { pump() }
     }
     private func pump() {
+        store.updater.resumeInstallationIfIdle()
         guard ready, !queuePaused, activeRequest == nil, !launching, let request = queue.pop() else { return }
         activeRequest = request
         let start = CFAbsoluteTimeGetCurrent()
@@ -139,6 +148,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let main = NSMenu()
         let app = NSMenuItem(); let submenu = NSMenu()
         submenu.addItem(withTitle: "Settings…", action: #selector(showSettings), keyEquivalent: ",").target = self
+        submenu.addItem(withTitle: "Check for Updates…", action: #selector(checkForUpdates), keyEquivalent: "").target = self
         submenu.addItem(.separator())
         submenu.addItem(withTitle: "Quit Browser Picker", action: #selector(quit), keyEquivalent: "q").target = self
         app.submenu = submenu; main.addItem(app); NSApp.mainMenu = main
@@ -166,6 +176,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(.separator())
         if !store.isDefault { menu.addItem(withTitle: "Make default browser…", action: #selector(makeDefault), keyEquivalent: "").target = self }
         menu.addItem(withTitle: "Settings…", action: #selector(showSettings), keyEquivalent: ",").target = self
+        menu.addItem(withTitle: "Check for Updates…", action: #selector(checkForUpdates), keyEquivalent: "").target = self
         menu.addItem(withTitle: "Quit", action: #selector(quit), keyEquivalent: "q").target = self
         statusItem?.menu = menu
     }
@@ -191,6 +202,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func makeDefault() { store.makeDefault(); settings.present() }
     @objc func resumeQueuedLinks() { queuePaused = false; rebuildMenu(); pump() }
     @objc private func showSettings() { store.refreshStatus(); settings.present() }
+    @objc private func checkForUpdates() {
+        store.settingsTab = .updates; settings.present(); store.updater.checkForUpdates()
+    }
+    func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        menuItem.action != #selector(checkForUpdates) || store.updater.canCheck
+    }
     @objc private func quit() { NSApp.terminate(nil) }
     func journal(_ fields: [String: Any]) {
         guard let index = CommandLine.arguments.firstIndex(of: "--journal"), CommandLine.arguments.indices.contains(index + 1),

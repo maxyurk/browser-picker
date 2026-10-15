@@ -7,6 +7,8 @@ import ServiceManagement
 final class AppStore: ObservableObject {
     @Published private(set) var configuration: Configuration
     @Published private(set) var destinations: [Destination]
+    @Published var settingsTab: SettingsTab = .general
+    let updater: AppUpdater
     @Published var errorMessage: String?
     @Published var isDefault = false
     @Published var loginEnabled = false
@@ -23,6 +25,8 @@ final class AppStore: ObservableObject {
         return visible.isEmpty ? destinations : visible
     }
     init(settingsURL: URL? = nil, destinations: [Destination]? = nil) {
+        let testFlags = ["--simulate", "--smoke-test", "--integration-test"]
+        updater = AppUpdater(enabled: settingsURL == nil && !testFlags.contains(where: CommandLine.arguments.contains))
         injectedDestinations = destinations
         let root = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support/BrowserPicker")
         repository = SettingsRepository(url: settingsURL ?? root.appendingPathComponent("settings.json"))

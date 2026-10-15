@@ -10,6 +10,15 @@
     <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>LSUIElement</key><true/>
     <key>NSHighResolutionCapable</key><true/>
+    <key>SUFeedURL</key><string>https://github.com/maxyurk/browser-picker/releases/latest/download/appcast.xml</string>
+    <key>SUEnableAutomaticChecks</key><true/>
+    <key>SUScheduledCheckInterval</key><integer>604800</integer>
+    <key>SUScheduledImpatientCheckInterval</key><integer>1209600</integer>
+    <key>SUAutomaticallyUpdate</key><true/>
+    <key>SUEnableSystemProfiling</key><false/>
+    <key>SUVerifyUpdateBeforeExtraction</key><true/>
+    <key>SURequireSignedFeed</key><true/>
+    <key>SUSignedFeedFailureExpirationInterval</key><integer>0</integer>
     <key>CFBundleDocumentTypes</key><array><dict>
         <key>CFBundleTypeName</key><string>Files</string>
         <key>CFBundleTypeRole</key><string>Viewer</string>

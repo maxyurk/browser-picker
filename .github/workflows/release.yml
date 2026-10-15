@@ -35,6 +35,12 @@ jobs:
           fetch-depth: 0
       - name: Test release versioning
         run: python3 -m unittest discover -s Tests/ReleaseTests
+      - name: Verify update signing is configured
+        env:
+          SPARKLE_ED25519_PRIVATE_KEY: ${{ secrets.SPARKLE_ED25519_PRIVATE_KEY }}
+        run: |
+          python3 scripts/update_feed.py validate-key
+          test -n "$SPARKLE_ED25519_PRIVATE_KEY"
       - name: Resolve version
         id: version
         env:
@@ -112,6 +118,8 @@ jobs:
           path: build/architectures
           merge-multiple: true
       - name: Assemble universal app
+        env:
+          SPARKLE_ED25519_PRIVATE_KEY: ${{ secrets.SPARKLE_ED25519_PRIVATE_KEY }}
         run: |
           mkdir -p build/arm64 build/x86_64
           ditto -x -k build/architectures/Browser-Picker-arm64.zip build/arm64

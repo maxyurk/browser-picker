@@ -26,6 +26,7 @@ enum SmokeTests {
         }
         BrowserCatalogChecks.run(check: { value, name in check(value, name) })
         PickerLayoutChecks.run(check: { value, name in check(value, name) })
+        UpdaterChecks.run(app, check: { value, name in check(value, name) })
         func key(_ code: UInt16, _ text: String, flags: NSEvent.ModifierFlags = []) {
             if let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 0, windowNumber: app.picker.window?.windowNumber ?? 0, context: nil, characters: text, charactersIgnoringModifiers: text, isARepeat: false, keyCode: code) {
                 app.picker.window?.sendEvent(event)
@@ -63,6 +64,10 @@ enum SmokeTests {
         app.launcher.onSimulatedOpen = { url, destination, privateMode, background in opened.append(url.absoluteString); openedIDs.append(destination.id); privateFlags.append(privateMode); backgroundFlags.append(background) }
         app.enqueue(LinkRequest(url: url, forcePrompt: true))
         check(app.picker.window?.isVisible == true, "picker visible")
+        var installedWhenIdle = 0
+        check(app.store.updater.postponeInstallationIfBusy { installedWhenIdle += 1 }, "update installation waits for the active picker")
+        app.store.updater.resumeInstallationIfIdle()
+        check(installedWhenIdle == 0, "an update cannot restart while a link is awaiting a choice")
         check(app.picker.window?.canBecomeKey == true, "picker accepts keyboard focus")
         check(app.picker.rows.count == app.store.shownDestinations.count, "all browsers rendered")
         check(!app.picker.rows.isEmpty, "installed browsers discovered")
@@ -104,6 +109,7 @@ enum SmokeTests {
         key(8, "c", flags: .command)
         check(NSPasteboard.general.string(forType: .string) == url.absoluteString, "copy exact URL")
         check(app.activeRequest == nil, "copy completes request")
+        check(installedWhenIdle == 1, "finishing the pending link resumes installation")
         check(app.store.configuration.rules.isEmpty, "Command-C does not remember a website")
         func restorePasteboard() {
             NSPasteboard.general.clearContents()
@@ -236,6 +242,7 @@ enum SmokeTests {
         check(app.settings.window?.isVisible == true, "settings visible")
         app.settings.window?.orderOut(nil)
         key(53, "")
+        var installedAfterQueue = 0
         func beginQueueTests() {
             let many = (0..<40).map { Destination(id: "example.\($0)", name: "Browser \($0)", bundleID: "example.\($0)", appPath: "/Applications/Example.app") }
             let manyStore = AppStore(settingsURL: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json"), destinations: many)
@@ -256,15 +263,18 @@ enum SmokeTests {
             for index in 0..<25 {
                 app.enqueue(LinkRequest(url: URL(string: "https://example.com/queue/\(index)")!, forcePrompt: true))
             }
+            check(app.store.updater.postponeInstallationIfBusy { installedAfterQueue += 1 }, "update installation waits for a queued link burst")
             DispatchQueue.main.async { drain(25) }
         }
         func drain(_ remaining: Int) {
             if remaining > 0 {
+                if remaining == 24 { check(installedAfterQueue == 0, "finishing one link cannot restart before queued links finish") }
                 check(app.activeRequest != nil, "queued request \(25 - remaining) retained")
                 key(18, "1")
                 DispatchQueue.main.async { drain(remaining - 1) }
             } else {
                 check(app.activeRequest == nil, "queue fully drained")
+                check(installedAfterQueue == 1, "installation resumes only after the entire link queue drains")
                 let tail = Array(opened.suffix(25))
                 check(tail == (0..<25).map { "https://example.com/queue/\($0)" }, "queue preserves order and every URL")
                 // Window activation is asynchronous; verify focus after its run-loop delivery,

@@ -19,7 +19,7 @@ Local files work too: choose **Open With → Browser Picker**, drop a file onto 
 - **Choose quickly.** Click a browser, press its number, or use the arrow keys and Return.
 - **Remember in one gesture.** Hold ⌘ and choose a browser. The checkbox, heading, and shortcut badges visibly change; ⌘1 opens and remembers browser 1.
 - **Keep accounts separate.** Route websites to supported Chromium profiles, or match a path or the app a link came from.
-- **Stay local.** No routing server, telemetry, or network requests. Known redirects are unwrapped on your Mac; tracking cleanup is optional.
+- **Stay local.** Routing works offline, with no telemetry or routing server. Optional weekly update checks contact GitHub without sending link data. Known redirects are unwrapped on your Mac; tracking cleanup is optional.
 - **Dismiss naturally.** Clicking outside closes the picker by default. Remaining queued links wait until you resume them.
 - **Use native controls.** An AppKit picker, SwiftUI settings, and a small Swift routing core.
 
@@ -41,6 +41,14 @@ Visit the [project website](https://maxyurk.github.io/browser-picker/). Its stat
 The release is ad-hoc signed and is **not Apple-notarized**. If macOS blocks the first launch, check the source and release, then choose **System Settings → Privacy & Security → Open Anyway**. See [Apple's first-launch instructions](https://support.apple.com/en-us/102445).
 
 [ZIP download](https://github.com/maxyurk/browser-picker/releases/latest/download/Browser-Picker.zip) · [Release notes and checksums](https://github.com/maxyurk/browser-picker/releases/latest)
+
+### Updates
+
+The built-in updater checks GitHub **once a week**, including across app restarts. Signed updates download in the background and install when you quit. It waits for pending links before restarting, and keeps your settings. Offline checks, GitHub failures, and invalid downloads stay quiet; the existing app keeps working.
+
+Use **Check for Updates…** in the menu bar or **Settings → Updates** to check immediately, turn off automatic checks, or disable automatic downloads. No telemetry or link data is sent. Checks use a static GitHub release file, avoiding GitHub's release API rate limit.
+
+Version 1.0.1 and earlier need a one-time manual download of the first updater-enabled release. Development builds without a configured signing key disable updates safely. [Release setup](RELEASING.md) describes how to activate signed updates.
 
 ### Build from source
 
@@ -147,9 +155,11 @@ To reproduce the screenshots with neutral fixture data:
 
 This renders the real app views into `docs/assets/` and never reads your Browser Picker settings or Chrome profile metadata. It briefly shows native windows and requires Safari, Chrome, and Orion installed for their icons. [CONTRIBUTING.md](CONTRIBUTING.md) describes the source layout and useful checks.
 
-See [TESTING.md](TESTING.md) for the verification record, measured performance, and platform coverage. The recorded suite includes **94 core tests** and **186 native smoke assertions**. Routing with 50 rules measured a median **13 µs** on the tested Apple Silicon Mac; browser startup and page loading are separate.
+See [TESTING.md](TESTING.md) for the verification record, measured performance, and platform coverage. The recorded suite includes **94 core tests** and **219 native smoke assertions**. Routing with 50 rules measured a median **13 µs** on the tested Apple Silicon Mac; browser startup and page loading are separate.
 
 App versions come from stable Git tags such as `v1.0.1`. The [release workflow](.github/workflows/release.yml) can automatically bump patch, minor, or major, build a universal app, create the tag, and publish the downloads. See [RELEASING.md](RELEASING.md) for the release controls and versioning rules.
+
+Updates use [Sparkle](https://sparkle-project.org/), pinned to version 2.10.0. Its license and third-party notices are included in the app bundle.
 
 ## Platform behavior
 

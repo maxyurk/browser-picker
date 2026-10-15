@@ -86,8 +86,9 @@ private final class ScreenshotSession: NSObject, NSApplicationDelegate {
         window.isReleasedWhenClosed = false
         window.center()
         settings = window
-        for (tab, name) in [(SettingsTab.general, "settings.png"), (.browsers, "browsers.png"), (.rules, "rules.png")] {
-            window.contentView = NSHostingView(rootView: SettingsView(store: store, onTest: { _ in }, selectedTab: tab))
+        for (tab, name) in [(SettingsTab.general, "settings.png"), (.browsers, "browsers.png"), (.rules, "rules.png"), (.updates, "updates.png")] {
+            store.settingsTab = tab
+            window.contentView = NSHostingView(rootView: SettingsView(store: store, onTest: { _ in }))
             NSApp.activate(ignoringOtherApps: true)
             window.makeKeyAndOrderFront(nil)
             window.makeFirstResponder(window)

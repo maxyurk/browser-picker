@@ -14,6 +14,7 @@ Every release has the same asset names so the website can always link directly t
 - `Browser-Picker.zip`: the same app as a ZIP archive.
 - `SHA256SUMS.txt`: SHA-256 hashes of the downloads and build metadata.
 - `BuildInfo.json`: version, tag, source commit, build number, and architectures.
+- `appcast.xml`: signed update feed pointing to this exact release's signed ZIP.
 
 The main download is `https://github.com/maxyurk/browser-picker/releases/latest/download/Browser-Picker.dmg`.
 
@@ -25,14 +26,25 @@ A local checkout uses its highest reachable SemVer tag. Before the first tag, or
 
 ## Signing and validation
 
+Sparkle verifies the update feed and ZIP using Ed25519 signatures before extraction. An invalid feed never falls back to unsigned metadata. The feed is served from `releases/latest/download/appcast.xml`; archive URLs include their exact version tag. Checks use the static download endpoint, not GitHub's rate-limited API. Automatic checking is weekly; a downloaded update may be offered after two weeks if the app has not quit. Customers can disable checks or automatic downloads in Settings → Updates.
+
+Before the first updater-enabled release, create a dedicated Sparkle signing key in the maintainer's macOS Keychain, put **only its public key** in `Resources/UpdatePublicKey.txt`, and store its private key in the repository's encrypted GitHub Actions secret named `SPARKLE_ED25519_PRIVATE_KEY`. Creating and storing this release-authorizing credential requires the maintainer's explicit approval. The setup has not been activated while the public-key file is empty. Never commit a private key or include one in release assets, logs, or command-line arguments. Keep a separate secure backup: ad-hoc signed releases cannot recover from a lost update-signing key by rotating a Developer ID identity.
+
+Use the pinned framework's `generate_keys --account com.github.maxyurk.browser-picker` tool after that approval. The same tool's `-p` option prints only the public key. Its `-x` option can securely export the private key for passing to `gh secret set` via standard input; remove the protected temporary export immediately afterward. Do not print its contents.
+
+Release preflight stops before building or tagging if signing is unconfigured. Packaging generates the appcast with Sparkle's official tools, verifies the archive against the app's public key with CryptoKit, verifies the signed feed, and includes the feed in `SHA256SUMS.txt`. Published releases are immutable on retries. Development builds without a public key still build and run, with automatic updates disabled and a manual download link.
+
 Downloads are ad-hoc signed. Apple Developer ID signing and notarization are not configured, so users may need **System Settings → Privacy & Security → Open Anyway** for their first launch. No signing credentials or private keys are stored in the repository.
 
 The release jobs run the 94 core tests on both architectures. Native UI checks and real browser handoffs are also tested locally, as recorded in [TESTING.md](TESTING.md). Test release tooling locally with:
 
 ```sh
 python3 -m unittest discover -s Tests/ReleaseTests
+python3 scripts/test-updater.py
 BROWSER_PICKER_RELEASE_TAG=v1.0.1 ./scripts/build.sh release
 BROWSER_PICKER_RELEASE_TAG=v1.0.1 ./scripts/package-release.sh
 ```
 
 CI builds use Xcode 16.4 on the `macos-15` and `macos-15-intel` runners. Runner labels and the available toolchain are documented by [GitHub's runner images](https://github.com/actions/runner-images). The workflow uses pinned official GitHub actions and grants repository write permission only to the publishing job.
+
+The updater integration test uses disposable app bundles, loopback HTTP, and a publicly documented RFC 8032 test key. It never reads a production signing key, changes the installed app, or changes file/URL associations. Test keys must never be put into the production public-key file.

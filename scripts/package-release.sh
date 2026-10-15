@@ -25,6 +25,7 @@ ditto -c -k --sequesterRsrc --keepParent "$app" build/release/Browser-Picker.zip
 hdiutil create -ov -format UDZO -fs HFS+ -volname 'Browser Picker' -srcfolder "$task_image_dir" build/release/Browser-Picker.dmg
 hdiutil verify build/release/Browser-Picker.dmg
 cp "$app/Contents/Resources/BuildInfo.json" build/release/BuildInfo.json
+python3 scripts/update_feed.py generate "$app" build/release
 cd build/release
-shasum -a 256 Browser-Picker.dmg Browser-Picker.zip BuildInfo.json > SHA256SUMS.txt
+shasum -a 256 Browser-Picker.dmg Browser-Picker.zip BuildInfo.json appcast.xml > SHA256SUMS.txt
 shasum -a 256 --check SHA256SUMS.txt

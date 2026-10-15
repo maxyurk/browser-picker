@@ -15,12 +15,11 @@ final class SettingsWindowController: NSWindowController {
     func present() { showWindow(nil); window?.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true); }
 }
 
-enum SettingsTab: Hashable { case general, browsers, rules }
+enum SettingsTab: Hashable { case general, browsers, rules, updates }
 
 struct SettingsView: View {
     @ObservedObject var store: AppStore
     let onTest: (URL) -> Void
-    @State var selectedTab: SettingsTab = .general
     @State private var testURL = "https://example.com"
     @State private var editingRule: Rule?
     @State private var localError: String?
@@ -35,10 +34,11 @@ struct SettingsView: View {
                 Spacer()
                 Text(store.isDefault ? "Active" : "Setup needed").font(.caption.weight(.medium)).foregroundStyle(store.isDefault ? .green : .secondary)
             }.padding(24)
-            TabView(selection: $selectedTab) {
+            TabView(selection: $store.settingsTab) {
                 general.tabItem { Text("General") }.tag(SettingsTab.general)
                 browsers.tabItem { Text("Browsers") }.tag(SettingsTab.browsers)
                 rules.tabItem { Text("Rules") }.tag(SettingsTab.rules)
+                UpdateSettingsView(updater: store.updater).tabItem { Text("Updates") }.tag(SettingsTab.updates)
             }.padding(.horizontal, 16).padding(.bottom, 16)
             if let message = store.errorMessage {
                 HStack(alignment: .top) {
@@ -189,6 +189,31 @@ struct SettingsView: View {
         panel.directoryURL = URL(fileURLWithPath: "/Applications")
         panel.allowedContentTypes = [.applicationBundle]; panel.canChooseDirectories = false; panel.allowsMultipleSelection = false
         if panel.runModal() == .OK, let url = panel.url { store.addBrowser(url) }
+    }
+}
+
+private struct UpdateSettingsView: View {
+    @ObservedObject var updater: AppUpdater
+    var body: some View {
+        Form {
+            Section {
+                Toggle("Check for updates automatically", isOn: Binding(get: { updater.automaticallyChecks }, set: { updater.automaticallyChecks = $0 }))
+                    .disabled(!updater.available)
+                Toggle("Download and install updates when I quit", isOn: Binding(get: { updater.automaticallyDownloads }, set: { updater.automaticallyDownloads = $0 }))
+                    .disabled(!updater.available || !updater.automaticallyChecks)
+                Text("Checks GitHub once a week. Downloads are verified before installation. Link data is never sent.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Section {
+                HStack {
+                    Text("Version " + (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Development"))
+                    Spacer()
+                    Button("Check for Updates…") { updater.checkForUpdates() }.disabled(!updater.canCheck)
+                }
+                Text(updater.status).font(.caption).foregroundStyle(.secondary)
+                Link("Download the latest release", destination: URL(string: "https://github.com/maxyurk/browser-picker/releases/latest")!)
+            }
+        }.formStyle(.grouped)
     }
 }
 
