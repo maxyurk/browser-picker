@@ -54,7 +54,7 @@ The built-in updater checks GitHub **once a week**, including across app restart
 
 Use **Check for Updates…** in the menu bar or **Settings → Updates** to check immediately, turn off automatic checks, or disable automatic downloads. No telemetry or link data is sent. Checks use a static GitHub release file, avoiding GitHub's release API rate limit.
 
-Version 1.0.1 and earlier need a one-time manual download of the first updater-enabled release. Development builds without a configured signing key disable updates safely. [Release setup](RELEASING.md) describes how to activate signed updates.
+Version 1.0.1 and earlier need a one-time manual download of **version 1.0.2 or later** to enable in-app updates. Development builds without a configured signing key disable updates safely. [Release setup](RELEASING.md) describes signing and publishing updates.
 
 ### Build from source
 
