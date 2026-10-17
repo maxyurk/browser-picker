@@ -117,6 +117,12 @@ jobs:
           pattern: browser-picker-*
           path: build/architectures
           merge-multiple: true
+      - name: Prepare update signing tools
+        run: |
+          sudo xcode-select --switch /Applications/Xcode_16.4.app
+          swift package --disable-sandbox --cache-path .build/cache --config-path .build/config --security-path .build/security resolve
+          test -x .build/artifacts/sparkle/Sparkle/bin/generate_appcast
+          test -x .build/artifacts/sparkle/Sparkle/bin/sign_update
       - name: Assemble universal app
         env:
           SPARKLE_ED25519_PRIVATE_KEY: ${{ secrets.SPARKLE_ED25519_PRIVATE_KEY }}
