@@ -321,7 +321,15 @@ enum SmokeTests {
         check(app.activeRequest != nil, "disabled outside-click option keeps picker open")
         app.store.update { $0.dismissPickerOnOutsideClick = true }
         NSApp.postEvent(mouse(in: otherWindow), atStart: false)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+        // Posting an AppKit event does not guarantee delivery before the next
+        // dispatch timer, particularly with an older linked SDK. Wait for the
+        // observable delivery, while retaining a timeout for real regressions.
+        let outsideClickDeadline = ProcessInfo.processInfo.systemUptime + 2
+        func waitForOutsideClick() {
+            if otherWindow.receivedClicks == 0 && ProcessInfo.processInfo.systemUptime < outsideClickDeadline {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) { waitForOutsideClick() }
+                return
+            }
             check(app.activeRequest == nil && app.picker.window?.isVisible == false, "real local outside-click monitor closes picker")
             check(otherWindow.receivedClicks == 1, "outside click is forwarded to its original window")
             check(opened.count == openedBeforeOutside && app.store.configuration.rules.isEmpty, "outside click neither opens nor remembers a browser")
@@ -354,5 +362,6 @@ enum SmokeTests {
                 beginQueueTests()
             }
         }
+        waitForOutsideClick()
     }
 }
