@@ -38,7 +38,13 @@ Visit the [project website](https://maxyurk.github.io/browser-picker/). Its stat
 2. Open the disk image and drag **Browser Picker.app** into **Applications**. Quit an existing copy before replacing it.
 3. Open Browser Picker from **Applications**, then follow the setup steps below.
 
-The release is ad-hoc signed and is **not Apple-notarized**. If macOS blocks the first launch, check the source and release, then choose **System Settings → Privacy & Security → Open Anyway**. See [Apple's first-launch instructions](https://support.apple.com/en-us/102445).
+The release is **not Apple-notarized**, so macOS may block the first launch. After checking the source and release:
+
+1. Try opening Browser Picker from **Applications** and dismiss the warning.
+2. Open **System Settings → Privacy & Security**, scroll to Security, and click **Open Anyway** for Browser Picker.
+3. Confirm **Open** and authenticate if asked. macOS remembers this app's exception.
+
+No Terminal command or system-wide security change is needed. [Apple's first-launch instructions](https://support.apple.com/en-us/102445) explain the process. Update signatures are separate: the built-in updater checks that future downloads were signed by this project's release key.
 
 [ZIP download](https://github.com/maxyurk/browser-picker/releases/latest/download/Browser-Picker.zip) · [Release notes and checksums](https://github.com/maxyurk/browser-picker/releases/latest)
 

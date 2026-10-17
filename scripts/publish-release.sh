@@ -56,7 +56,7 @@ Automatic updates are now built in: verified updates are checked weekly from Git
 
 If you have version 1.0.1 or earlier, download this release once to enable future in-app updates.
 
-This build is ad-hoc signed and is not Apple-notarized. If macOS blocks the first launch, use **System Settings → Privacy & Security → Open Anyway** after checking the source and release. No Xcode installation is required.
+This build is not Apple-notarized. After checking the source and release, try opening it from Applications and dismiss the first-launch warning. Choose **System Settings → Privacy & Security → Open Anyway** for Browser Picker, then confirm **Open**. No Terminal command, system-wide security change, or Xcode installation is required. Future in-app updates are verified with this project's separate update-signing key.
 
 The ZIP is an alternative to the disk image. SHA256SUMS.txt verifies the downloads; BuildInfo.json records the tag, source commit, and architectures. Builds and core tests run on GitHub's Apple Silicon and Intel macOS runners.
 NOTES
