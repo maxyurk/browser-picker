@@ -36,7 +36,7 @@ Release preflight stops before building or tagging if signing is unconfigured. P
 
 Downloads are ad-hoc signed. Apple Developer ID signing and notarization are not configured, so users may need **System Settings → Privacy & Security → Open Anyway** for their first launch. No signing credentials or private keys are stored in the repository.
 
-The release jobs run the 94 core tests on both architectures. Native UI checks and real browser handoffs are also tested locally, as recorded in [TESTING.md](TESTING.md). Test release tooling locally with:
+The release jobs run the 106 core tests on both architectures. Native UI checks and real browser handoffs have also been tested locally; see [TESTING.md](TESTING.md) for the scope and any checks skipped for a particular release. Test release tooling locally with:
 
 ```sh
 python3 -m unittest discover -s Tests/ReleaseTests

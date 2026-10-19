@@ -35,19 +35,35 @@ public struct Rule: Codable, Equatable, Identifiable, Sendable {
     public var destinationID: String
     public var enabled: Bool
     public var privateWindow: Bool
-    public init(id: UUID = UUID(), domain: String = "", includeSubdomains: Bool = true, pathPrefix: String = "", sourceBundleID: String = "", destinationID: String = "prompt", enabled: Bool = true, privateWindow: Bool = false) {
+    public var localFilesOnly: Bool
+    public init(id: UUID = UUID(), domain: String = "", includeSubdomains: Bool = true, pathPrefix: String = "", sourceBundleID: String = "", destinationID: String = "prompt", enabled: Bool = true, privateWindow: Bool = false, localFilesOnly: Bool = false) {
         self.id = id; self.domain = domain; self.includeSubdomains = includeSubdomains
         self.pathPrefix = pathPrefix; self.sourceBundleID = sourceBundleID
-        self.destinationID = destinationID; self.enabled = enabled; self.privateWindow = privateWindow
+        self.destinationID = destinationID; self.enabled = enabled; self.privateWindow = privateWindow; self.localFilesOnly = localFilesOnly
+    }
+    enum CodingKeys: CodingKey { case id, domain, includeSubdomains, pathPrefix, sourceBundleID, destinationID, enabled, privateWindow, localFilesOnly }
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        id = try values.decode(UUID.self, forKey: .id)
+        domain = try values.decode(String.self, forKey: .domain)
+        includeSubdomains = try values.decode(Bool.self, forKey: .includeSubdomains)
+        pathPrefix = try values.decode(String.self, forKey: .pathPrefix)
+        sourceBundleID = try values.decode(String.self, forKey: .sourceBundleID)
+        destinationID = try values.decode(String.self, forKey: .destinationID)
+        enabled = try values.decode(Bool.self, forKey: .enabled)
+        privateWindow = try values.decode(Bool.self, forKey: .privateWindow)
+        localFilesOnly = try values.decodeIfPresent(Bool.self, forKey: .localFilesOnly) ?? false
     }
     public func validated() throws -> Rule {
         var result = self
         result.domain = domain.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !result.domain.isEmpty { result.domain = try WebURL.normalizeDomain(result.domain) }
+        if localFilesOnly {
+            result.domain = ""; result.includeSubdomains = false
+        } else if !result.domain.isEmpty { result.domain = try WebURL.normalizeDomain(result.domain) }
         result.sourceBundleID = sourceBundleID.trimmingCharacters(in: .whitespacesAndNewlines)
         result.pathPrefix = pathPrefix.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !result.domain.isEmpty || !result.sourceBundleID.isEmpty else {
-            throw PickerError.invalidRule("Add a website or a source app to the rule.")
+        guard localFilesOnly || !result.domain.isEmpty || !result.sourceBundleID.isEmpty else {
+            throw PickerError.invalidRule("Choose Local files, or add a website or a source app.")
         }
         guard result.pathPrefix.isEmpty || result.pathPrefix.hasPrefix("/") else {
             throw PickerError.invalidRule("Path prefixes must start with /.")
@@ -56,7 +72,7 @@ public struct Rule: Codable, Equatable, Identifiable, Sendable {
         return result
     }
     public func matches(_ url: URL, source: String?) -> Bool {
-        return matches(host: Self.matchingHost(url) ?? "", path: url.path, source: source)
+        return matches(host: Self.matchingHost(url) ?? "", path: url.path, source: source, isFile: url.isFileURL)
     }
     static func matchingHost(_ url: URL) -> String? {
         guard !url.isFileURL else { return nil }
@@ -64,8 +80,9 @@ public struct Rule: Codable, Equatable, Identifiable, Sendable {
         if host.contains(":") { host = (try? WebURL.normalizeDomain(host)) ?? host }
         return host
     }
-    func matches(host: String, path: String, source: String?) -> Bool {
+    func matches(host: String, path: String, source: String?, isFile: Bool = false) -> Bool {
         guard enabled else { return false }
+        if localFilesOnly && !isFile { return false }
         if !domain.isEmpty && host != domain && !(includeSubdomains && host.hasSuffix("." + domain)) { return false }
         if !sourceBundleID.isEmpty && sourceBundleID != source { return false }
         return pathPrefix.isEmpty || path.hasPrefix(pathPrefix)
@@ -73,7 +90,7 @@ public struct Rule: Codable, Equatable, Identifiable, Sendable {
 }
 
 public struct Configuration: Codable, Equatable, Sendable {
-    public var version = 1
+    public private(set) var version = 2
     public var defaultDestinationID = "prompt"
     public var hiddenDestinationIDs: Set<String> = []
     public var customBrowserPaths: [String] = []
@@ -85,8 +102,11 @@ public struct Configuration: Codable, Equatable, Sendable {
     enum CodingKeys: CodingKey { case version, defaultDestinationID, hiddenDestinationIDs, customBrowserPaths, cleanTracking, unwrapRedirects, dismissPickerOnOutsideClick, rules }
     public init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
-        version = try values.decodeIfPresent(Int.self, forKey: .version) ?? 1
-        guard version == 1 else { throw PickerError.unsupportedVersion(version) }
+        let storedVersion = try values.decodeIfPresent(Int.self, forKey: .version) ?? 1
+        guard storedVersion == 1 || storedVersion == 2 else { throw PickerError.unsupportedVersion(storedVersion) }
+        // Older apps must reject this schema instead of treating a local-file
+        // rule as an unrestricted source-app rule. Existing settings migrate on save.
+        version = 2
         defaultDestinationID = try values.decodeIfPresent(String.self, forKey: .defaultDestinationID) ?? "prompt"
         hiddenDestinationIDs = try values.decodeIfPresent(Set<String>.self, forKey: .hiddenDestinationIDs) ?? []
         customBrowserPaths = try values.decodeIfPresent([String].self, forKey: .customBrowserPaths) ?? []
@@ -99,9 +119,20 @@ public struct Configuration: Codable, Equatable, Sendable {
     }
     public mutating func remember(domain: String, destinationID: String, privateWindow: Bool = false) throws {
         let host = try WebURL.normalizeDomain(domain)
+        let rule = try Rule(domain: host, destinationID: destinationID, privateWindow: privateWindow).validated()
         // A remembered choice takes precedence, but never overwrites a source-specific rule.
         rules.removeAll { $0.domain == host && $0.sourceBundleID.isEmpty && $0.pathPrefix.isEmpty }
-        rules.insert(Rule(domain: host, destinationID: destinationID, privateWindow: privateWindow), at: 0)
+        rules.insert(rule, at: 0)
+    }
+    public mutating func remember(url: URL, destinationID: String, privateWindow: Bool = false) throws {
+        let target = try OpenTarget.process(url, unwrap: false, cleanTracking: false)
+        if target.isFileURL {
+            let rule = try Rule(destinationID: destinationID, privateWindow: privateWindow, localFilesOnly: true).validated()
+            rules.removeAll { $0.localFilesOnly && $0.sourceBundleID.isEmpty && $0.pathPrefix.isEmpty }
+            rules.insert(rule, at: 0)
+        } else if let host = target.host {
+            try remember(domain: host, destinationID: destinationID, privateWindow: privateWindow)
+        }
     }
 }
 
@@ -126,7 +157,8 @@ public enum Router {
         // Normalize once per incoming URL, rather than once for each candidate rule.
         let host = Rule.matchingHost(url) ?? ""
         let path = url.path
-        let rule = configuration.rules.first { $0.matches(host: host, path: path, source: request.sourceBundleID) }
+        let isFile = url.isFileURL
+        let rule = configuration.rules.first { $0.matches(host: host, path: path, source: request.sourceBundleID, isFile: isFile) }
         let target = rule?.destinationID ?? configuration.defaultDestinationID
         // Missing targets always fall back to a choice; never silently use another account/browser.
         guard target != "prompt", let destination = destinations.first(where: { $0.id == target }) else { return .prompt(url) }

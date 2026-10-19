@@ -197,10 +197,11 @@ enum SmokeTests {
             check(app.picker.window?.title == "Open file", "file picker identifies a file")
             let fileRemember = findButton(app.picker.window?.contentView, id: "remember-domain")
             modifiers(.command)
-            check(fileRemember?.isHidden == true && fileRemember?.state == .off, "file picker does not offer website remembering on Command")
+            check(fileRemember?.isHidden == false && fileRemember?.state == .on && fileRemember?.title == "Always use this browser for local files", "Command offers remembering all local files")
             check(commandKey(18, "1"), "Command-number can open a file")
             check(opened.last == file.absoluteString && app.activeRequest == nil, "file address reaches browser unchanged")
-            check(app.store.configuration.rules.isEmpty, "opening a file never creates a website rule")
+            check(app.store.configuration.rules.count == 1 && app.store.configuration.rules[0].localFilesOnly, "Command-number remembers one rule for all local files")
+            app.store.update { $0.rules.removeAll() }
         }
         check(openErrors.isEmpty && app.store.errorMessage == nil && app.settings.window?.isVisible == false, "file opens produce no validation warning or settings window")
         app.application(NSApp, open: fileURLs)
@@ -224,7 +225,7 @@ enum SmokeTests {
         app.picker.onChoose?(missing, true, false, false)
         check(app.activeRequest?.url == fileURLs[0] && app.picker.window?.isVisible == true, "failed browser launch retains file for retry")
         app.launcher.simulated = true; key(18, "1")
-        check(app.store.configuration.rules.isEmpty, "file retry cannot remember a website")
+        check(app.store.configuration.rules.isEmpty, "failed remembered file choice is not saved by a one-time retry")
         app.enqueue(LinkRequest(url: URL(string: "mailto:example@example.com")!))
         check(openErrors.count == 1 && app.store.errorMessage == nil && app.settings.window?.isVisible == false, "invalid link errors stay out of Settings")
         app.enqueue(LinkRequest(url: url, forcePrompt: true))

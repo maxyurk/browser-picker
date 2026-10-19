@@ -76,7 +76,7 @@ struct SettingsView: View {
                     Text(message).font(.caption).foregroundStyle(.secondary)
                     Button("Open System Settings…") { store.openDefaultBrowserSettings() }
                 }
-                Picker("For unmatched links", selection: Binding(get: { store.configuration.defaultDestinationID }, set: { value in store.update { $0.defaultDestinationID = value } })) {
+                Picker("For unmatched links and files", selection: Binding(get: { store.configuration.defaultDestinationID }, set: { value in store.update { $0.defaultDestinationID = value } })) {
                     Text("Always ask").tag("prompt")
                     ForEach(store.destinations) { Text($0.name).tag($0.id) }
                     if store.configuration.defaultDestinationID != "prompt" && !store.destinations.contains(where: { $0.id == store.configuration.defaultDestinationID }) {
@@ -140,7 +140,7 @@ struct SettingsView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Open the right browser automatically").font(.headline)
-                    Text("First matching rule wins. Website and source conditions both apply.").font(.caption).foregroundStyle(.secondary)
+                    Text("First matching rule wins. All conditions in a rule apply.").font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
                 Button { editingRule = Rule() } label: { Label("Add rule", systemImage: "plus") }
@@ -149,7 +149,7 @@ struct SettingsView: View {
                 VStack(spacing: 12) {
                     Image(systemName: "arrow.triangle.branch").font(.system(size: 32)).foregroundStyle(.tertiary)
                     Text("No rules yet").font(.headline)
-                    Text("Add one here, or remember a website from the picker.").foregroundStyle(.secondary)
+                    Text("Add one here, or remember a website or local files from the picker.").foregroundStyle(.secondary)
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
@@ -158,7 +158,7 @@ struct SettingsView: View {
                             HStack(spacing: 10) {
                                 Toggle("Enable rule", isOn: Binding(get: { rule.enabled }, set: { value in store.update { config in if let current = config.rules.firstIndex(where: { $0.id == rule.id }) { config.rules[current].enabled = value } } })).labelsHidden().toggleStyle(.checkbox)
                                 VStack(alignment: .leading, spacing: 3) {
-                                    Text(rule.domain.isEmpty ? "Any link or file" + rule.pathPrefix : rule.domain + rule.pathPrefix).fontWeight(.medium)
+                                    Text(rule.localFilesOnly ? "Local files" + (rule.pathPrefix.isEmpty ? "" : " · " + rule.pathPrefix) : rule.domain.isEmpty ? "Any link or file" + rule.pathPrefix : rule.domain + rule.pathPrefix).fontWeight(.medium)
                                     Text(description(rule)).font(.caption).foregroundStyle(.secondary)
                                 }
                                 Spacer()
@@ -227,9 +227,15 @@ struct RuleEditor: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Routing rule").font(.title2.weight(.semibold))
             Form {
-                TextField("Website", text: $rule.domain, prompt: Text("github.com (or leave blank)"))
-                Toggle("Include subdomains", isOn: $rule.includeSubdomains)
-                TextField("Path prefix", text: $rule.pathPrefix, prompt: Text("/team (optional)"))
+                Picker("Match", selection: $rule.localFilesOnly) {
+                    Text("Website or source app").tag(false)
+                    Text("Local files").tag(true)
+                }
+                if !rule.localFilesOnly {
+                    TextField("Website", text: $rule.domain, prompt: Text("github.com (or leave blank)"))
+                    Toggle("Include subdomains", isOn: $rule.includeSubdomains)
+                }
+                TextField("Path prefix", text: $rule.pathPrefix, prompt: Text(rule.localFilesOnly ? "/Users/you/Documents (optional)" : "/team (optional)"))
                 HStack {
                     TextField("Source app", text: $rule.sourceBundleID, prompt: Text("Any app"))
                     Button("Choose…") { chooseSource() }
@@ -243,7 +249,7 @@ struct RuleEditor: View {
                 }.onChange(of: rule.destinationID) { _, _ in if !supportsPrivate { rule.privateWindow = false } }
                 Toggle("Private window", isOn: $rule.privateWindow).disabled(!supportsPrivate)
             }
-            Text("Leave the website blank to match links and files from a source app. A path prefix matches the beginning of the URL path.").font(.caption).foregroundStyle(.secondary)
+            Text(rule.localFilesOnly ? "Matches every file type in any folder. Leave path and source app blank to use one browser for all local files." : "Leave the website blank to match links and files from a source app. A path prefix matches the beginning of the URL path.").font(.caption).foregroundStyle(.secondary)
             if let error { Text(error).font(.caption).foregroundStyle(.red) }
             HStack {
                 Spacer()

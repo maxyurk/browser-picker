@@ -115,7 +115,7 @@ final class AppStore: ObservableObject {
         } catch { errorMessage = "Could not change launch at login: " + error.localizedDescription }
         refreshStatus()
     }
-    func remember(_ host: String, destination: Destination, privateWindow: Bool) {
-        update { try $0.remember(domain: host, destinationID: destination.id, privateWindow: privateWindow) }
+    func remember(_ url: URL, destination: Destination, privateWindow: Bool) {
+        update { try $0.remember(url: url, destinationID: destination.id, privateWindow: privateWindow) }
     }
 }

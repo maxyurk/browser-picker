@@ -91,7 +91,7 @@ open "build/Browser Picker.app"
 | --- | --- |
 | Open in a numbered browser | **1–9** |
 | Select and open | **↑ / ↓ / Tab**, then **Return / Space** |
-| Open and remember this website | **⌘1–⌘9** or **⌘-click** |
+| Open and remember this website, or all local files | **⌘1–⌘9** or **⌘-click** |
 | Preview the remember action | Hold **⌘**; release to restore your manual checkbox choice |
 | Open a private window in a supported browser | **Option-click**, or check **Private window** |
 | Request a background open | Hold **Control** while choosing; browser behavior may vary |
@@ -102,7 +102,7 @@ open "build/Browser Picker.app"
 
 You can also check **Always use this browser for this website** manually. A choice is remembered only after the browser launch succeeds, for the host and its subdomains.
 
-Files use the same picker and configured default. Website rules and the remember option apply to web links; source-app rules can also route files. ⌘1–⌘9 still select browsers for files, without creating a website rule. **Open link from clipboard…** also accepts copied Finder files, file URLs, and absolute file paths.
+For a file, choose **Always use this browser for local files**, or use **⌘1–⌘9 / ⌘-click**, to remember one browser for **all local files**, including HTML, PDF, unknown extensions, and files in other folders. The choice is saved only after a successful browser launch. Normal number shortcuts open once. Website rules stay separate. **Open link from clipboard…** also accepts copied Finder files, file URLs, and absolute file paths.
 
 Outside-click dismissal is enabled by default; change **Settings → General → Close picker when clicking outside** to disable it. Outside dismissal pauses any remaining queue. Choose **Resume N queued links…** in the menu bar, reopen the app, or send a new link to resume. Escape cancels the current link and advances the queue.
 
@@ -110,7 +110,9 @@ The menu bar also offers **Open link from clipboard…**.
 
 ## Rules and browsers
 
-Rules match a website, a URL path prefix, a source application's bundle identifier, or a combination. All supplied conditions must match; the **first enabled matching rule wins**. A remembered choice moves to the top. Rules can also explicitly ask in the picker.
+Rules match a website, **Local files**, a URL path prefix, a source application's bundle identifier, or a combination. To send every local file to one browser, choose **Settings → Rules → Add rule → Match: Local files**, select a browser, and leave path and source app blank. Local-file rules apply to every file type and never match web links. Optional path and source-app conditions can narrow them. Files must be opened through Browser Picker; the browser decides how to display them.
+
+All supplied conditions must match; the **first enabled matching rule wins**. A remembered choice moves to the top. Rules can also explicitly ask in the picker.
 
 <p align="center"><img src="docs/assets/rules.png" width="640" alt="Example routing rules sending GitHub to Chrome Work, Apple developer pages to Orion, and Wikipedia to Safari"></p>
 
@@ -134,6 +136,8 @@ HTTP and HTTPS links and local files are accepted. Files retain their original a
 Tracking cleanup is **off by default**. When enabled, it removes common UTM and click attribution parameters while preserving query encoding, order, duplicates, and fragments. Recognized signed and token-bearing links retain their parameters.
 
 Settings live in `~/Library/Application Support/BrowserPicker/settings.json`. Saves are atomic, with a backup of the previous valid configuration. Damaged files are preserved, backup recovery is supported, and newer schema versions are never downgraded.
+
+Existing settings migrate to schema 2 on the next save. Older app versions refuse this schema so they cannot accidentally apply local-file rules to web links.
 
 Normal use records no link history. The optional development flag `--journal PATH` writes diagnostic URLs to that file; only use it with links you intend to log.
 
@@ -161,7 +165,7 @@ To reproduce the screenshots with neutral fixture data:
 
 This renders the real app views into `docs/assets/` and never reads your Browser Picker settings or Chrome profile metadata. It briefly shows native windows and requires Safari, Chrome, and Orion installed for their icons. [CONTRIBUTING.md](CONTRIBUTING.md) describes the source layout and useful checks.
 
-See [TESTING.md](TESTING.md) for the verification record, measured performance, and platform coverage. The recorded suite includes **94 core tests** and **219 native smoke assertions**. Routing with 50 rules measured a median **13 µs** on the tested Apple Silicon Mac; browser startup and page loading are separate.
+See [TESTING.md](TESTING.md) for the verification record, measured performance, and platform coverage. The current automated suite includes **106 core tests**; previous releases also passed **219 native smoke assertions**. Routing with 50 rules measured a median **13 µs** on the tested Apple Silicon Mac; browser startup and page loading are separate.
 
 App versions come from stable Git tags such as `v1.0.1`. The [release workflow](.github/workflows/release.yml) can automatically bump patch, minor, or major, build a universal app, create the tag, and publish the downloads. See [RELEASING.md](RELEASING.md) for the release controls and versioning rules.
 

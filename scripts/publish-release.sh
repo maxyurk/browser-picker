@@ -50,7 +50,9 @@ A universal macOS app for Apple Silicon and Intel, requiring macOS 14 or later.
 
 Download **Browser-Picker.dmg**, open it, and drag **Browser Picker.app** to **Applications**. Quit an existing copy before replacing it. Open the app and choose **Make default…** in General settings.
 
-The app supports generic browsers, compatible Chromium profiles, website rules, Command-number shortcuts, and local files of any type. Routing stays on your Mac.
+Local files can now share one browser choice: open a file and choose **Always use this browser for local files**, or use **Command-number / Command-click**. The rule covers all file types and folders. You can also choose **Match: Local files** in the rule editor, with optional path or source-app conditions. Website rules stay separate, and choices are saved only after a successful browser launch.
+
+The app supports generic browsers, compatible Chromium profiles, website rules, and local files of any type. Routing stays on your Mac. Existing settings migrate automatically on the next save; older app versions cannot read the new settings schema.
 
 Automatic updates are now built in: verified updates are checked weekly from GitHub, downloaded in the background, and installed when you quit. Check manually or change update preferences in Settings → Updates. Failed checks stay quiet and retry on the normal schedule. No telemetry or link data is sent.
 

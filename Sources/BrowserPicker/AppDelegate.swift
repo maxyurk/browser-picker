@@ -54,8 +54,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         picker.onChoose = { [weak self] destination, remember, privateMode, background in
             guard let self, let request = activeRequest, !launching else { return }
             // Remember the final (unwrapped) destination, not a redirect service.
-            let host = remember && picker.url?.isFileURL == false ? picker.url?.host : nil
-            open(picker.url ?? request.url, destination: destination, privateWindow: privateMode, background: background, rememberHost: host)
+            let url = picker.url ?? request.url
+            open(url, destination: destination, privateWindow: privateMode, background: background, rememberURL: remember ? url : nil)
         }
         picker.onCancel = { [weak self] in
             guard let self, !launching else { return }
@@ -127,7 +127,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             DispatchQueue.main.async { [weak self] in self?.pump() }
         }
     }
-    private func open(_ url: URL, destination: Destination, privateWindow: Bool, background: Bool, rememberHost: String? = nil) {
+    private func open(_ url: URL, destination: Destination, privateWindow: Bool, background: Bool, rememberURL: URL? = nil) {
         launching = true; picker.window?.orderOut(nil)
         picker.refreshOutsideClickMonitoring()
         launcher.open(url, in: destination, privateWindow: privateWindow, background: background) { [weak self] error in
@@ -137,7 +137,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
                 store.refresh()
                 picker.show(url: url, queued: queue.count, failure: error.localizedDescription)
             } else {
-                if let rememberHost { store.remember(rememberHost, destination: destination, privateWindow: privateWindow) }
+                if let rememberURL { store.remember(rememberURL, destination: destination, privateWindow: privateWindow) }
                 picker.dismiss(restoreFocus: background); activeRequest = nil
                 // Yield between auto-routed links, avoiding recursion and keeping input responsive.
                 DispatchQueue.main.async { [weak self] in self?.pump() }

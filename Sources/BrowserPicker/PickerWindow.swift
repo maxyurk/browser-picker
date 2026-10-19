@@ -33,6 +33,7 @@ final class BrowserRow: NSButton {
     private let shortcut = NSTextField(labelWithString: "")
     private let number: Int
     var commandHeld = false { didSet { updateShortcut() } }
+    var rememberTarget = "this website" { didSet { updateShortcut() } }
     var selected = false { didSet { updateAppearance() } }
     init(destination: Destination, icon: NSImage?, number: Int) {
         self.destination = destination
@@ -76,8 +77,8 @@ final class BrowserRow: NSButton {
     func updateAppearance() { background.layer?.backgroundColor = (selected ? NSColor.controlAccentColor.withAlphaComponent(0.16) : NSColor.clear).cgColor }
     private func updateShortcut() {
         shortcut.stringValue = number <= 9 ? (commandHeld ? "⌘" : "") + String(number) : ""
-        setAccessibilityLabel(destination.name + (number <= 9 ? ", shortcut \(commandHeld ? "Command " : "")\(number)" : "") + (commandHeld ? ", remember for this website" : ""))
-        toolTip = number <= 9 ? "Press \(number) to open once, or ⌘\(number) to open and remember this website." : "Command-click to open and remember this website."
+        setAccessibilityLabel(destination.name + (number <= 9 ? ", shortcut \(commandHeld ? "Command " : "")\(number)" : "") + (commandHeld ? ", remember for \(rememberTarget)" : ""))
+        toolTip = number <= 9 ? "Press \(number) to open once, or ⌘\(number) to open and remember for \(rememberTarget)." : "Command-click to open and remember for \(rememberTarget)."
     }
     @objc private func clicked() { choose?(destination, NSApp.currentEvent?.modifierFlags ?? []) }
 }
@@ -98,7 +99,8 @@ final class PickerWindowController: NSWindowController, NSWindowDelegate {
     private let rememberHint = NSTextField(labelWithString: "")
     private var manuallyRemember = false
     private var commandHeld = false
-    private var canRememberWebsite: Bool { url?.isFileURL == false && !(url?.host ?? "").isEmpty }
+    private var canRemember: Bool { url?.isFileURL == true || !(url?.host ?? "").isEmpty }
+    private var rememberTarget: String { url?.isFileURL == true ? "all local files" : "this website" }
     private var baseHeading = "Open link in…"
     private var cachedDestinations: [Destination]?
     private var cachedRowsHeight: CGFloat?
@@ -324,23 +326,27 @@ final class PickerWindowController: NSWindowController, NSWindowDelegate {
             detail.stringValue = "Private-window routing is unavailable for this browser."
             detail.textColor = .systemRed; NSSound.beep(); return
         }
-        onChoose?(destination, canRememberWebsite && (manuallyRemember || flags.contains(.command)), wantsPrivate, flags.contains(.control))
+        onChoose?(destination, canRemember && (manuallyRemember || flags.contains(.command)), wantsPrivate, flags.contains(.control))
     }
     private func modifiersChanged(_ flags: NSEvent.ModifierFlags) {
         commandHeld = flags.contains(.command)
         updateRememberAppearance()
     }
     private func updateRememberAppearance() {
-        remember.isHidden = !canRememberWebsite; remember.isEnabled = canRememberWebsite
-        let effectiveRemember = canRememberWebsite && (manuallyRemember || commandHeld)
+        remember.title = url?.isFileURL == true ? "Always use this browser for local files" : "Always use this browser for this website"
+        remember.isHidden = !canRemember; remember.isEnabled = canRemember
+        let effectiveRemember = canRemember && (manuallyRemember || commandHeld)
         remember.state = effectiveRemember ? .on : .off
-        heading.stringValue = effectiveRemember ? "Always open this site in…" : baseHeading
-        for row in rows where row.commandHeld != commandHeld { row.commandHeld = commandHeld }
+        heading.stringValue = effectiveRemember ? (url?.isFileURL == true ? "Always open local files in…" : "Always open this site in…") : baseHeading
+        for row in rows {
+            if row.rememberTarget != rememberTarget { row.rememberTarget = rememberTarget }
+            if row.commandHeld != commandHeld { row.commandHeld = commandHeld }
+        }
         let count = min(rows.count, 9)
         let shortcuts = count > 1 ? "⌘1–⌘\(count)" : count == 1 ? "⌘1" : "⌘-click"
-        rememberHint.stringValue = canRememberWebsite
-            ? (commandHeld ? "\(shortcuts) opens and remembers this website" : "Hold ⌘ to remember · \(shortcuts)")
-            : "Choose a browser. Files open once."
+        rememberHint.stringValue = canRemember
+            ? (commandHeld ? "\(shortcuts) opens and remembers for \(rememberTarget)" : "Hold ⌘ to remember · \(shortcuts)")
+            : "Choose a browser."
     }
     @objc private func rememberClicked() {
         if !commandHeld { manuallyRemember = remember.state == .on }
