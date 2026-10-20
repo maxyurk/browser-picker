@@ -82,6 +82,8 @@ jobs:
           test "$(uname -m)" = "$TARGET_ARCH"
       - name: Test core in release mode
         run: ./scripts/test.sh -c release
+      - name: Test background browser callbacks without UI
+        run: zsh scripts/test-browser-launcher.sh
       - name: Build and verify app
         run: |
           ./scripts/build.sh release

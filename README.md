@@ -48,6 +48,8 @@ No Terminal command or system-wide security change is needed. [Apple's first-lau
 
 [ZIP download](https://github.com/maxyurk/browser-picker/releases/latest/download/Browser-Picker.zip) · [Release notes and checksums](https://github.com/maxyurk/browser-picker/releases/latest)
 
+Keep one installed copy. If an older copy is in your home Applications folder, quit it and replace or remove it when installing the release in `/Applications`. Eject the disk image after installation.
+
 ### Updates
 
 The built-in updater checks GitHub **once a week**, including across app restarts. Signed updates download in the background and install when you quit. It waits for pending links before restarting, and keeps your settings. Offline checks, GitHub failures, and invalid downloads stay quiet; the existing app keeps working.
@@ -146,6 +148,7 @@ Normal use records no link history. The optional development flag `--journal PAT
 ```sh
 ./scripts/test.sh
 ./scripts/test.sh -c release
+zsh scripts/test-browser-launcher.sh
 ./scripts/build.sh release
 ./scripts/test-file-handoffs.sh
 
@@ -156,6 +159,8 @@ Normal use records no link history. The optional development flag `--journal PAT
 ```
 
 Native checks require a logged-in macOS desktop. Use a fresh temporary settings path for an isolated run. `--pick https://example.com` opens a link directly in the picker. `--diagnose-registration` reports Launch Services registration without changing it.
+
+The browser-launcher callback checks are headless and open no browser or desktop UI. They require the release core build from the preceding test command. The source installer refuses to create another copy when Browser Picker already exists in either Applications folder.
 
 To reproduce the screenshots with neutral fixture data:
 

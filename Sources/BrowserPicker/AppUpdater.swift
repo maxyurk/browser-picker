@@ -24,7 +24,7 @@ final class AppUpdater: NSObject, ObservableObject, SPUUpdaterDelegate {
         let updater = SPUUpdater(hostBundle: bundle, applicationBundle: bundle, userDriver: driver, delegate: self)
         engine = updater
         for keyPath in [\SPUUpdater.canCheckForUpdates, \SPUUpdater.automaticallyChecksForUpdates, \SPUUpdater.automaticallyDownloadsUpdates] {
-            observations.append(updater.observe(keyPath, options: [.new]) { [weak self] _, _ in
+            observations.append(updater.observe(keyPath, options: [.new]) { @Sendable [weak self] _, _ in
                 Task { @MainActor [weak self] in self?.objectWillChange.send(); self?.onChange?() }
             })
         }

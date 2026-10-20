@@ -58,8 +58,31 @@ enum BrowserCatalog {
     }
 }
 
+// AppKit's older SDK declarations do not mark these callbacks Sendable even
+// though Launch Services invokes them on a background queue. Keep that boundary
+// explicit so Swift cannot infer MainActor isolation before the callback hops.
+typealias BrowserOpenCompletion = @Sendable (NSRunningApplication?, Error?) -> Void
+
+@MainActor
+protocol BrowserWorkspaceOpening {
+    func open(_ urls: [URL], withApplicationAt appURL: URL, configuration: NSWorkspace.OpenConfiguration, completionHandler: @escaping BrowserOpenCompletion)
+    func openApplication(at appURL: URL, configuration: NSWorkspace.OpenConfiguration, completionHandler: @escaping BrowserOpenCompletion)
+}
+
+@MainActor
+private struct SystemBrowserWorkspace: BrowserWorkspaceOpening {
+    func open(_ urls: [URL], withApplicationAt appURL: URL, configuration: NSWorkspace.OpenConfiguration, completionHandler: @escaping BrowserOpenCompletion) {
+        NSWorkspace.shared.open(urls, withApplicationAt: appURL, configuration: configuration, completionHandler: completionHandler)
+    }
+    func openApplication(at appURL: URL, configuration: NSWorkspace.OpenConfiguration, completionHandler: @escaping BrowserOpenCompletion) {
+        NSWorkspace.shared.openApplication(at: appURL, configuration: configuration, completionHandler: completionHandler)
+    }
+}
+
 @MainActor
 final class BrowserLauncher {
+    private let workspace: any BrowserWorkspaceOpening
+    init(workspace: (any BrowserWorkspaceOpening)? = nil) { self.workspace = workspace ?? SystemBrowserWorkspace() }
     var simulated = false
     var onSimulatedOpen: ((URL, Destination, Bool, Bool) -> Void)?
     func open(_ url: URL, in destination: Destination, privateWindow: Bool, background: Bool, completion: @escaping @MainActor (Error?) -> Void) {
@@ -85,7 +108,7 @@ final class BrowserLauncher {
                 let process = Process(); process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
                 process.arguments = ["-n"] + (background ? ["-g"] : []) + ["-a", appURL.path, "--args"] + args
                 process.standardOutput = FileHandle.nullDevice; process.standardError = FileHandle.nullDevice
-                process.terminationHandler = { process in
+                process.terminationHandler = { @Sendable process in
                     let code = process.terminationStatus
                     Task { @MainActor in
                         completion(code == 0 ? nil : NSError(domain: "BrowserPicker", code: Int(code), userInfo: [NSLocalizedDescriptionKey: "Could not launch \(destination.name). Choose another browser."]))
@@ -102,12 +125,12 @@ final class BrowserLauncher {
                 let event = NSAppleEventDescriptor(eventClass: AEEventClass(kInternetEventClass), eventID: AEEventID(kAEGetURL), targetDescriptor: nil, returnID: AEReturnID(kAutoGenerateReturnID), transactionID: AETransactionID(kAnyTransactionID))
                 event.setParam(NSAppleEventDescriptor(string: url.absoluteString), forKeyword: AEKeyword(keyDirectObject))
                 configuration.appleEvent = event
-                NSWorkspace.shared.openApplication(at: appURL, configuration: configuration) { _, error in
+                workspace.openApplication(at: appURL, configuration: configuration) { @Sendable _, error in
                     Task { @MainActor in completion(error) }
                 }
                 return
             }
-            NSWorkspace.shared.open([url], withApplicationAt: appURL, configuration: configuration) { _, error in
+            workspace.open([url], withApplicationAt: appURL, configuration: configuration) { @Sendable _, error in
                 Task { @MainActor in completion(error) }
             }
         }
