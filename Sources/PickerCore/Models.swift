@@ -59,7 +59,10 @@ public struct Rule: Codable, Equatable, Identifiable, Sendable {
         result.domain = domain.trimmingCharacters(in: .whitespacesAndNewlines)
         if localFilesOnly {
             result.domain = ""; result.includeSubdomains = false
-        } else if !result.domain.isEmpty { result.domain = try WebURL.normalizeDomain(result.domain) }
+        } else if !result.domain.isEmpty {
+            result.domain = try DomainPattern.normalize(result.domain)
+            if result.domain.hasPrefix("*.") { result.includeSubdomains = true }
+        }
         result.sourceBundleID = sourceBundleID.trimmingCharacters(in: .whitespacesAndNewlines)
         result.pathPrefix = pathPrefix.trimmingCharacters(in: .whitespacesAndNewlines)
         guard localFilesOnly || !result.domain.isEmpty || !result.sourceBundleID.isEmpty else {
@@ -83,14 +86,14 @@ public struct Rule: Codable, Equatable, Identifiable, Sendable {
     func matches(host: String, path: String, source: String?, isFile: Bool = false) -> Bool {
         guard enabled else { return false }
         if localFilesOnly && !isFile { return false }
-        if !domain.isEmpty && host != domain && !(includeSubdomains && host.hasSuffix("." + domain)) { return false }
+        if !domain.isEmpty && !DomainPattern.matches(host, pattern: domain, includeSubdomains: includeSubdomains) { return false }
         if !sourceBundleID.isEmpty && sourceBundleID != source { return false }
         return pathPrefix.isEmpty || path.hasPrefix(pathPrefix)
     }
 }
 
 public struct Configuration: Codable, Equatable, Sendable {
-    public private(set) var version = 2
+    public private(set) var version = 3
     public var defaultDestinationID = "prompt"
     public var hiddenDestinationIDs: Set<String> = []
     public var customBrowserPaths: [String] = []
@@ -103,10 +106,10 @@ public struct Configuration: Codable, Equatable, Sendable {
     public init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         let storedVersion = try values.decodeIfPresent(Int.self, forKey: .version) ?? 1
-        guard storedVersion == 1 || storedVersion == 2 else { throw PickerError.unsupportedVersion(storedVersion) }
-        // Older apps must reject this schema instead of treating a local-file
-        // rule as an unrestricted source-app rule. Existing settings migrate on save.
-        version = 2
+        guard (1...3).contains(storedVersion) else { throw PickerError.unsupportedVersion(storedVersion) }
+        // Older apps must reject new rule formats rather than recover an older
+        // backup that silently discards them. Existing settings migrate on save.
+        version = 3
         defaultDestinationID = try values.decodeIfPresent(String.self, forKey: .defaultDestinationID) ?? "prompt"
         hiddenDestinationIDs = try values.decodeIfPresent(Set<String>.self, forKey: .hiddenDestinationIDs) ?? []
         customBrowserPaths = try values.decodeIfPresent([String].self, forKey: .customBrowserPaths) ?? []

@@ -116,6 +116,8 @@ Rules match a website, **Local files**, a URL path prefix, a source application'
 
 All supplied conditions must match; the **first enabled matching rule wins**. A remembered choice moves to the top. Rules can also explicitly ask in the picker.
 
+Website rules accept a leading wildcard: **`*.github.io`** matches `max.github.io` and `docs.max.github.io`, while excluding `github.io` itself. Wildcards already include every subdomain, so the **Include subdomains** toggle is fixed on for them. Plain hostnames keep their existing behavior. Wildcards are supported only as a leading `*.`; paths and source-app conditions can still narrow the rule.
+
 <p align="center"><img src="docs/assets/rules.png" width="640" alt="Example routing rules sending GitHub to Chrome Work, Apple developer pages to Orion, and Wikipedia to Safari"></p>
 
 Browser detection uses macOS's registered HTTP/HTTPS handlers and HTML-viewing metadata, rather than a vendor allowlist. Common non-browser forwarding apps are filtered out. **Add browser…** supports runnable browser apps that are not registered or use unusual metadata, including apps outside `/Applications`. Added locations persist across restarts; multiple copies of the same browser produce a single destination. Browsers are listed alphabetically, with profiles grouped underneath. Long lists scroll, and arrow-key selection keeps the selected browser visible.
@@ -139,7 +141,7 @@ Tracking cleanup is **off by default**. When enabled, it removes common UTM and 
 
 Settings live in `~/Library/Application Support/BrowserPicker/settings.json`. Saves are atomic, with a backup of the previous valid configuration. Damaged files are preserved, backup recovery is supported, and newer schema versions are never downgraded.
 
-Existing settings migrate to schema 2 on the next save. Older app versions refuse this schema so they cannot accidentally apply local-file rules to web links.
+Existing settings from schemas 1 and 2 migrate to schema 3 on the next save. Older app versions refuse this schema so they cannot discard wildcard rules or misapply newer rule formats.
 
 Normal use records no link history. The optional development flag `--journal PATH` writes diagnostic URLs to that file; only use it with links you intend to log.
 
@@ -170,7 +172,7 @@ To reproduce the screenshots with neutral fixture data:
 
 This renders the real app views into `docs/assets/` and never reads your Browser Picker settings or Chrome profile metadata. It briefly shows native windows and requires Safari, Chrome, and Orion installed for their icons. [CONTRIBUTING.md](CONTRIBUTING.md) describes the source layout and useful checks.
 
-See [TESTING.md](TESTING.md) for the verification record, measured performance, and platform coverage. The current automated suite includes **106 core tests**; previous releases also passed **219 native smoke assertions**. Routing with 50 rules measured a median **13 µs** on the tested Apple Silicon Mac; browser startup and page loading are separate.
+See [TESTING.md](TESTING.md) for the verification record, measured performance, and platform coverage. The current automated suite includes **116 core tests** and **115 headless browser-callback checks**; previous releases also passed **219 native smoke assertions**. Routing with 50 rules measured a median **13 µs** on the tested Apple Silicon Mac; browser startup and page loading are separate.
 
 App versions come from stable Git tags such as `v1.0.1`. The [release workflow](.github/workflows/release.yml) can automatically bump patch, minor, or major, build a universal app, create the tag, and publish the downloads. See [RELEASING.md](RELEASING.md) for the release controls and versioning rules.
 

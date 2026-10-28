@@ -50,11 +50,11 @@ A universal macOS app for Apple Silicon and Intel, requiring macOS 14 or later.
 
 Download **Browser-Picker.dmg**, open it, and drag **Browser Picker.app** to **Applications**. Quit an existing copy before replacing it. Open the app and choose **Make default…** in General settings.
 
-Fixes a crash after selecting a browser that prevented Command-click and Command-number choices from being remembered. Browser launch completion and errors are now handled safely before saving the choice.
+Website rules now support leading wildcards such as **`*.github.io`**. They match subdomains at any depth while excluding the bare hostname. The rule editor shows the syntax and keeps the subdomain option enabled for wildcard rules. Existing hostname rules, path/source conditions, and rule ordering retain their behavior.
 
 Local files can now share one browser choice: open a file and choose **Always use this browser for local files**, or use **Command-number / Command-click**. The rule covers all file types and folders. You can also choose **Match: Local files** in the rule editor, with optional path or source-app conditions. Website rules stay separate, and choices are saved only after a successful browser launch.
 
-The app supports generic browsers, compatible Chromium profiles, website rules, and local files of any type. Routing stays on your Mac. Existing settings migrate automatically on the next save; older app versions cannot read the new settings schema.
+The app supports generic browsers, compatible Chromium profiles, website rules, and local files of any type. Routing stays on your Mac. Existing settings migrate to schema 3 on the next save; older app versions cannot read the new schema.
 
 Automatic updates are now built in: verified updates are checked weekly from GitHub, downloaded in the background, and installed when you quit. Check manually or change update preferences in Settings → Updates. Failed checks stay quiet and retry on the normal schedule. No telemetry or link data is sent.
 

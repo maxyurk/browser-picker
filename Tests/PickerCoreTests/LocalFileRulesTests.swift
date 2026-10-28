@@ -128,7 +128,7 @@ final class LocalFileRulesTests: XCTestCase {
         data["rules"] = try XCTUnwrap(data["rules"] as? [[String: Any]]).map { $0.filter { $0.key != "localFilesOnly" } }
         let decoded = try JSONDecoder().decode(Configuration.self, from: JSONSerialization.data(withJSONObject: data))
         XCTAssertEqual(decoded, old)
-        XCTAssertEqual(decoded.version, 2)
+        XCTAssertEqual(decoded.version, 3)
         XCTAssertFalse(decoded.rules.contains(where: \.localFilesOnly))
         XCTAssertEqual(try route(files[0], decoded, source: "sender"), .open(files[0], chrome, privateWindow: false))
         XCTAssertEqual(try route(URL(string: "https://example.com")!, decoded), .open(URL(string: "https://example.com")!, chrome, privateWindow: false))
@@ -142,7 +142,7 @@ final class LocalFileRulesTests: XCTestCase {
         try config.remember(url: files[0], destinationID: chrome.id, privateWindow: true)
         try repository.save(config)
         let raw = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: repository.url)) as? [String: Any])
-        XCTAssertEqual(raw["version"] as? Int, 2)
+        XCTAssertEqual(raw["version"] as? Int, 3)
         let restored = try repository.load().configuration
         XCTAssertEqual(restored, config)
         XCTAssertEqual(try route(files[2], restored), .open(files[2], chrome, privateWindow: true))

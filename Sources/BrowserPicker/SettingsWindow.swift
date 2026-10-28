@@ -232,8 +232,10 @@ struct RuleEditor: View {
                     Text("Local files").tag(true)
                 }
                 if !rule.localFilesOnly {
-                    TextField("Website", text: $rule.domain, prompt: Text("github.com (or leave blank)"))
-                    Toggle("Include subdomains", isOn: $rule.includeSubdomains)
+                    TextField("Website", text: $rule.domain, prompt: Text("github.com or *.github.io"))
+                    Toggle("Include subdomains", isOn: Binding(get: { rule.domain.contains("*") || rule.includeSubdomains }, set: { rule.includeSubdomains = $0 }))
+                        .disabled(rule.domain.contains("*"))
+                        .help("A wildcard already matches subdomains at any depth, excluding the bare hostname.")
                 }
                 TextField("Path prefix", text: $rule.pathPrefix, prompt: Text(rule.localFilesOnly ? "/Users/you/Documents (optional)" : "/team (optional)"))
                 HStack {
@@ -249,7 +251,7 @@ struct RuleEditor: View {
                 }.onChange(of: rule.destinationID) { _, _ in if !supportsPrivate { rule.privateWindow = false } }
                 Toggle("Private window", isOn: $rule.privateWindow).disabled(!supportsPrivate)
             }
-            Text(rule.localFilesOnly ? "Matches every file type in any folder. Leave path and source app blank to use one browser for all local files." : "Leave the website blank to match links and files from a source app. A path prefix matches the beginning of the URL path.").font(.caption).foregroundStyle(.secondary)
+            Text(rule.localFilesOnly ? "Matches every file type in any folder. Leave path and source app blank to use one browser for all local files." : "*.github.io matches subdomains at any depth, excluding github.io. Leave the website blank for a source-app rule. A path prefix matches the beginning of the URL path.").font(.caption).foregroundStyle(.secondary)
             if let error { Text(error).font(.caption).foregroundStyle(.red) }
             HStack {
                 Spacer()
